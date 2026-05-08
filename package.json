@@ -3,14 +3,13 @@
   "version": "0.1.0",
   "description": "Easyfix console shared React component library.",
   "type": "module",
-  "main": "./dist/easyfix-console-ui.umd.cjs",
+  "main": "./dist/easyfix-console-ui.js",
   "module": "./dist/easyfix-console-ui.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/easyfix-console-ui.js",
-      "require": "./dist/easyfix-console-ui.umd.cjs"
+      "import": "./dist/easyfix-console-ui.js"
     },
     "./styles.css": "./dist/console-ui.css",
     "./tailwind": "./tailwind-source.css"

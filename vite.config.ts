@@ -15,22 +15,12 @@ export default defineConfig({
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"),
       name: "EasyfixConsoleUi",
-      fileName: (format) =>
-        format === "umd"
-          ? "easyfix-console-ui.umd.cjs"
-          : "easyfix-console-ui.js",
-      formats: ["es", "umd"],
+      fileName: () => "easyfix-console-ui.js",
+      formats: ["es"],
     },
     rollupOptions: {
       external: (id) =>
         !id.startsWith(".") && !id.startsWith("/") && !id.startsWith("@/"),
-      output: {
-        globals: {
-          react: "React",
-          "react-dom": "ReactDOM",
-          "react/jsx-runtime": "jsxRuntime",
-        },
-      },
     },
   },
 });
