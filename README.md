@@ -1,28 +1,27 @@
-# EasyFix Console UI
+# Easyfix Console UI
 
-EasyFix console shared React component library. Components use the `Easy` prefix and match the EasyFix micro frontend stack: React 18, TypeScript, Tailwind CSS 4 and Base UI.
+[![npm version](https://img.shields.io/npm/v/@easyfix/console-ui.svg)](https://www.npmjs.com/package/@easyfix/console-ui)
+[![GitHub](https://img.shields.io/github/license/easyfix-vn/easyfix-console-ui)](https://github.com/easyfix-vn/easyfix-console-ui)
+
+Easyfix console shared React component library. Components use the `Easy` prefix and match the Easyfix micro frontend stack: React 18, TypeScript, Tailwind CSS 4 and Base UI.
 
 ## Install
 
-During local development, install from the sibling folder:
+```bash
+npm install @easyfix/console-ui
+# or
+pnpm add @easyfix/console-ui
+```
+
+For local development, install from the sibling folder:
 
 ```bash
 cd easyfix_fe/easyfix_console_ui
-npm install
-npm run build
+pnpm install
+pnpm build
 
 cd ../microfe-app-demo
-npm install ../easyfix_console_ui
-```
-
-After publishing to npm, replace the `file:` dependency with a released version:
-
-```json
-{
-  "dependencies": {
-    "@easyfix/console-ui": "^0.1.0"
-  }
-}
+pnpm add ../easyfix_console_ui
 ```
 
 ## Usage
@@ -96,7 +95,7 @@ export function Example() {
 
 ### EasyIcons
 
-Re-exports `lucide-react` and includes `EasyFixLogoIcon` and `EasyConsoleIcon`.
+Re-exports `lucide-react` and includes `EasyfixLogoIcon` and `EasyConsoleIcon`.
 
 ### EasyLocaleSwitch
 
