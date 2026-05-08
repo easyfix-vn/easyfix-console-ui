@@ -1,6 +1,6 @@
 {
   "name": "@easyfix/console-ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Easyfix console shared React component library.",
   "type": "module",
   "main": "./dist/easyfix-console-ui.js",
