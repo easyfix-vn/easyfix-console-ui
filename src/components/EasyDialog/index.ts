@@ -1,0 +1,15 @@
+export {
+  EasyDialog,
+  EasyDialogBody,
+  EasyDialogClose,
+  EasyDialogDescription,
+  EasyDialogFooter,
+  EasyDialogHeader,
+  EasyDialogPopup,
+  EasyDialogPrimitive,
+  EasyDialogRoot,
+  EasyDialogTitle,
+  EasyDialogTrigger,
+  type EasyDialogProps,
+  type EasyDialogSize,
+} from "./EasyDialog";

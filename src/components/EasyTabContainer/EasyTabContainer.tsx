@@ -4,7 +4,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
-export type EasyTabsVariant = "default" | "underline";
+export type EasyTabsVariant = "default" | "underline" | "navigation";
 
 export type EasyTabItem = {
   value: string;
@@ -40,11 +40,14 @@ export function EasyTabsList({
   return (
     <TabsPrimitive.List
       className={cn(
-        "relative z-0 flex w-fit items-center justify-center gap-x-0.5 text-muted-foreground",
+        "relative z-0 flex items-center text-muted-foreground",
         "data-[orientation=vertical]:flex-col",
-        variant === "default"
-          ? "rounded-lg bg-muted p-0.5 text-muted-foreground/72"
-          : "data-[orientation=vertical]:px-1 data-[orientation=horizontal]:py-1 *:data-[slot=easy-tabs-tab]:hover:bg-accent",
+        variant === "default" &&
+          "w-fit justify-center gap-x-0.5 rounded-lg bg-muted p-0.5 text-muted-foreground/72",
+        variant === "underline" &&
+          "w-fit justify-center gap-x-0.5 data-[orientation=vertical]:px-1 data-[orientation=horizontal]:py-1 *:data-[slot=easy-tabs-tab]:hover:bg-accent",
+        variant === "navigation" &&
+          "w-full justify-start gap-x-1 border-b border-border pb-0 *:data-[slot=easy-tabs-tab]:hover:text-foreground",
         className,
       )}
       data-slot="easy-tabs-list"
@@ -54,7 +57,7 @@ export function EasyTabsList({
       <TabsPrimitive.Indicator
         className={cn(
           "absolute bottom-0 left-0 h-(--active-tab-height) w-(--active-tab-width) translate-x-(--active-tab-left) -translate-y-(--active-tab-bottom) transition-[width,translate] duration-200 ease-in-out",
-          variant === "underline"
+          (variant === "underline" || variant === "navigation")
             ? "z-10 bg-primary data-[orientation=horizontal]:h-0.5 data-[orientation=vertical]:w-0.5 data-[orientation=vertical]:-translate-x-px data-[orientation=horizontal]:translate-y-px"
             : "-z-1 rounded-md bg-background shadow-sm/5 dark:bg-input",
         )}
@@ -71,7 +74,7 @@ export function EasyTabsTrigger({
   return (
     <TabsPrimitive.Tab
       className={cn(
-        "relative flex h-9 shrink-0 grow cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-[calc(--spacing(2.5)-1px)] font-medium text-base outline-none transition-[color,background-color,box-shadow] hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start data-active:text-foreground data-disabled:opacity-64 sm:h-8 sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:-mx-0.5 [&_svg]:shrink-0",
+        "relative flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-[calc(--spacing(2.5)-1px)] font-medium text-base outline-none transition-[color,background-color,box-shadow] hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start data-active:text-foreground data-disabled:opacity-64 sm:h-8 sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:-mx-0.5 [&_svg]:shrink-0",
         className,
       )}
       data-slot="easy-tabs-tab"

@@ -7,6 +7,7 @@ import { EasyButton } from "@/components/EasyButton";
 import { cn } from "@/lib/utils";
 
 export type EasyDrawerPosition = "right" | "left" | "top" | "bottom";
+export type EasyDrawerWidth = "sm" | "md" | "lg" | "xl" | "full";
 
 const directionMap: Record<
   EasyDrawerPosition,
@@ -16,6 +17,14 @@ const directionMap: Record<
   left: "left",
   right: "right",
   top: "up",
+};
+
+const widthClassMap: Record<EasyDrawerWidth, string> = {
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  full: "max-w-full",
 };
 
 export function EasyDrawerRoot({
@@ -58,13 +67,16 @@ export function EasyDrawerBackdrop({
 export function EasyDrawerPopup({
   className,
   position = "right",
+  width = "md",
   showCloseButton = true,
   children,
   ...props
 }: DrawerPrimitive.Popup.Props & {
   position?: EasyDrawerPosition;
+  width?: EasyDrawerWidth;
   showCloseButton?: boolean;
 }): React.ReactElement {
+  const widthClass = widthClassMap[width] ?? widthClassMap.md;
   return (
     <EasyDrawerPortal>
       <EasyDrawerBackdrop />
@@ -72,9 +84,9 @@ export function EasyDrawerPopup({
         className={cn(
           "fixed z-50 flex max-h-full min-h-0 flex-col border-border bg-popover text-popover-foreground shadow-lg outline-none transition-transform duration-300 data-ending-style:opacity-0 data-starting-style:opacity-0",
           position === "right" &&
-            "inset-y-0 right-0 w-[calc(100%-3rem)] max-w-md border-l data-ending-style:translate-x-full data-starting-style:translate-x-full",
+            cn("inset-y-0 right-0 w-[calc(100%-3rem)] border-l data-ending-style:translate-x-full data-starting-style:translate-x-full", widthClass),
           position === "left" &&
-            "inset-y-0 left-0 w-[calc(100%-3rem)] max-w-md border-r data-ending-style:-translate-x-full data-starting-style:-translate-x-full",
+            cn("inset-y-0 left-0 w-[calc(100%-3rem)] border-r data-ending-style:-translate-x-full data-starting-style:-translate-x-full", widthClass),
           position === "bottom" &&
             "inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl border-t data-ending-style:translate-y-full data-starting-style:translate-y-full",
           position === "top" &&
@@ -150,6 +162,7 @@ export type EasyDrawerProps = DrawerPrimitive.Root.Props & {
   footer?: React.ReactNode;
   children: React.ReactNode;
   position?: EasyDrawerPosition;
+  width?: EasyDrawerWidth;
   contentClassName?: string;
 };
 
@@ -160,13 +173,14 @@ export function EasyDrawer({
   footer,
   children,
   position = "right",
+  width = "md",
   contentClassName,
   ...props
 }: EasyDrawerProps): React.ReactElement {
   return (
     <EasyDrawerRoot position={position} {...props}>
       {trigger && <EasyDrawerTrigger render={trigger} />}
-      <EasyDrawerPopup className={contentClassName} position={position}>
+      <EasyDrawerPopup className={contentClassName} position={position} width={width}>
         {(title || description) && (
           <EasyDrawerHeader>
             {title && <EasyDrawerTitle className="font-semibold">{title}</EasyDrawerTitle>}

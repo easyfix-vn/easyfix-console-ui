@@ -11,6 +11,7 @@ export default defineConfig({
     },
   },
   build: {
+    emptyOutDir: false,
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"),
       name: "EasyfixConsoleUi",
@@ -21,7 +22,8 @@ export default defineConfig({
       formats: ["es", "umd"],
     },
     rollupOptions: {
-      external: ["react", "react-dom", "react/jsx-runtime"],
+      external: (id) =>
+        !id.startsWith(".") && !id.startsWith("/") && !id.startsWith("@/"),
       output: {
         globals: {
           react: "React",

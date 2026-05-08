@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,9 @@ export type EasyTreeSelectPanelProps = {
   leftClassName?: string;
   rightClassName?: string;
   treeClassName?: string;
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
+  centerActions?: boolean;
   renderItem?: (node: EasyTreeNode, state: EasyTreeRenderState) => ReactNode;
 };
 
@@ -60,10 +63,14 @@ export function EasyTreeSelectPanel({
   leftClassName,
   rightClassName,
   treeClassName,
+  collapsible = false,
+  defaultCollapsed = false,
+  centerActions = false,
   renderItem,
 }: EasyTreeSelectPanelProps): React.ReactElement {
   const initialExpanded = useMemo(() => collectInitialExpanded(treeData), [treeData]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(initialExpanded);
+  const [sideCollapsed, setSideCollapsed] = useState(defaultCollapsed);
 
   function toggleNode(id: string) {
     setExpandedIds((current) => {
@@ -141,34 +148,79 @@ export function EasyTreeSelectPanel({
   return (
     <div
       className={cn(
-        "grid min-h-[420px] grid-cols-1 overflow-hidden rounded-xl border border-border bg-background md:grid-cols-[280px_1fr]",
+        "grid min-h-[420px] overflow-hidden rounded-xl border border-border bg-background",
         className,
       )}
+      style={sideCollapsed ? undefined : { gridTemplateColumns: '280px 1fr' }}
       data-slot="easy-tree-select-panel"
     >
-      <aside
-        className={cn(
-          "flex min-h-0 flex-col border-b border-border bg-muted/30 md:border-b-0 md:border-r",
-          leftClassName,
-        )}
-      >
-        {searchActions && (
-          <div className="border-b border-border p-3" data-slot="easy-tree-search-actions">
-            {searchActions}
-          </div>
-        )}
-        <div className={cn("min-h-0 flex-1 overflow-auto p-3", treeClassName)}>
-          {treeData.length ? (
-            <ul className="space-y-1">{treeData.map((node) => renderNode(node, 0))}</ul>
-          ) : (
-            <div className="grid h-full place-items-center text-sm text-muted-foreground">
-              {empty}
+      {!sideCollapsed && (
+        <aside
+          className={cn(
+            "flex min-h-0 flex-col border-b border-border bg-muted/30 md:border-b-0 md:border-r",
+            leftClassName,
+          )}
+        >
+          {searchActions && (
+            <div className="border-b border-border p-3" data-slot="easy-tree-search-actions">
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">{searchActions}</div>
+                {collapsible && (
+                  <button
+                    aria-label="Collapse panel"
+                    className="grid size-7 shrink-0 place-items-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-foreground"
+                    onClick={() => setSideCollapsed(true)}
+                    type="button"
+                  >
+                    <PanelLeftClose className="size-4" />
+                  </button>
+                )}
+              </div>
             </div>
           )}
+          {!searchActions && collapsible && (
+            <div className="flex justify-end border-b border-border p-2">
+              <button
+                aria-label="Collapse panel"
+                className="grid size-7 shrink-0 place-items-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-foreground"
+                onClick={() => setSideCollapsed(true)}
+                type="button"
+              >
+                <PanelLeftClose className="size-4" />
+              </button>
+            </div>
+          )}
+          <div className={cn("min-h-0 flex-1 overflow-auto p-3", treeClassName)}>
+            {treeData.length ? (
+              <ul className="space-y-1">{treeData.map((node) => renderNode(node, 0))}</ul>
+            ) : (
+              <div className="grid h-full place-items-center text-sm text-muted-foreground">
+                {empty}
+              </div>
+            )}
+          </div>
+        </aside>
+      )}
+      <section
+        className={cn(
+          "relative min-h-0 overflow-auto p-4",
+          centerActions && "flex flex-col items-start justify-center",
+          rightClassName,
+        )}
+      >
+        {collapsible && sideCollapsed && (
+          <button
+            aria-label="Expand panel"
+            className="absolute left-3 top-3 grid size-7 shrink-0 place-items-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={() => setSideCollapsed(false)}
+            type="button"
+          >
+            <PanelLeftOpen className="size-4" />
+          </button>
+        )}
+        <div className={cn(collapsible && sideCollapsed && "mt-10")}>
+          {actions}
         </div>
-      </aside>
-      <section className={cn("min-h-0 overflow-auto p-4", rightClassName)}>
-        {actions}
       </section>
     </div>
   );
