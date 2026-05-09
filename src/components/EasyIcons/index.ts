@@ -1,2 +1,9 @@
 export * from "lucide-react";
-export { EasyConsoleIcon, EasyFixLogoIcon } from "./EasyIcons";
+export {
+  EasyConsoleIcon,
+  EasyfixLogoIcon,
+  /** @deprecated Use EasyfixLogoIcon */
+  EasyfixLogoIcon as EasyFixLogoIcon,
+  type EasyfixLogoIconProps,
+  type EasyFixLogoIconProps,
+} from "./EasyIcons";

@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEasyT } from '@/i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DateRangePicker, type DateRangeValue } from '@/components/ui/date-range-picker'
 import {
   Select,
   SelectContent,
@@ -15,9 +16,9 @@ import type { SearchFieldDef } from './types'
 
 export type EasySearchFormProps = {
   fields: SearchFieldDef[]
-  onSearch: (values: Record<string, string>) => void
+  onSearch: (values: Record<string, unknown>) => void
   onReset: () => void
-  onValuesChange?: (values: Record<string, string>) => void
+  onValuesChange?: (values: Record<string, unknown>) => void
   collapsed?: boolean
   onToggle?: () => void
 }
@@ -32,9 +33,9 @@ export function EasySearchForm({
   collapsed: controlledCollapsed,
   onToggle,
 }: EasySearchFormProps) {
-  const { t } = useTranslation()
+  const t = useEasyT()
   const [internalCollapsed, setInternalCollapsed] = useState(true)
-  const [values, setValues] = useState<Record<string, string>>({})
+  const [values, setValues] = useState<Record<string, unknown>>({})
 
   const collapsed = controlledCollapsed ?? internalCollapsed
   const toggle = onToggle ?? (() => setInternalCollapsed((v) => !v))
@@ -42,7 +43,7 @@ export function EasySearchForm({
   const visibleFields = collapsed ? fields.slice(0, COLLAPSED_FIELDS) : fields
   const canCollapse = fields.length > COLLAPSED_FIELDS
 
-  function handleChange(key: string, value: string) {
+  function handleChange(key: string, value: unknown) {
     setValues((prev) => {
       const next = { ...prev, [key]: value }
       onValuesChange?.(next)
@@ -71,13 +72,21 @@ export function EasySearchForm({
             {field.type === 'input' ? (
               <Input
                 placeholder={field.placeholder}
-                value={values[field.key] ?? ''}
+                value={(values[field.key] as string) ?? ''}
                 onChange={(e) => handleChange(field.key, e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
+            ) : field.type === 'dateRange' ? (
+              <DateRangePicker
+                value={values[field.key] as DateRangeValue | undefined}
+                onChange={(v) => handleChange(field.key, v)}
+                placeholder={field.placeholder}
+                showTime={field.showTime}
+                className="w-full"
+              />
             ) : (
               <Select
-                value={values[field.key] ?? ''}
+                value={(values[field.key] as string) ?? ''}
                 onValueChange={(v) => v !== null && handleChange(field.key, v)}
               >
                 <SelectTrigger className="w-full">

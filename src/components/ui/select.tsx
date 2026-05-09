@@ -9,10 +9,60 @@ import {
   ChevronsUpDownIcon,
   ChevronUpIcon,
 } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export const Select: typeof SelectPrimitive.Root = SelectPrimitive.Root;
+/* ------------------------------------------------------------------ */
+/* value → label：从 children 中自动提取 items 映射                       */
+/* ------------------------------------------------------------------ */
+
+function extractSelectItems(
+  children: React.ReactNode,
+): Record<string, React.ReactNode> | undefined {
+  const items: Record<string, React.ReactNode> = {};
+  let found = false;
+
+  function walk(node: React.ReactNode): void {
+    React.Children.forEach(node, (child) => {
+      if (!React.isValidElement(child)) return;
+      if (child.type === SelectItem) {
+        const { value, children: label } = child.props as {
+          value?: unknown;
+          children?: React.ReactNode;
+        };
+        if (value != null) {
+          items[String(value)] = label ?? null;
+          found = true;
+        }
+        return;
+      }
+      const childProps = child.props as { children?: React.ReactNode };
+      if (childProps.children) {
+        walk(childProps.children);
+      }
+    });
+  }
+
+  walk(children);
+  return found ? items : undefined;
+}
+
+export function Select<Value = unknown>({
+  items: itemsProp,
+  children,
+  ...props
+}: SelectPrimitive.Root.Props<Value>): React.ReactElement {
+  const resolvedItems = React.useMemo(
+    () => itemsProp ?? extractSelectItems(children),
+    [itemsProp, children],
+  );
+
+  return (
+    <SelectPrimitive.Root items={resolvedItems} {...props}>
+      {children}
+    </SelectPrimitive.Root>
+  );
+}
 
 export const selectTriggerVariants = cva(
   "relative inline-flex min-h-9 w-full min-w-36 select-none items-center justify-between gap-2 rounded-lg border border-input bg-background not-dark:bg-clip-padding px-[calc(--spacing(3)-1px)] text-left text-base text-foreground shadow-xs/5 outline-none ring-ring/24 transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] not-data-disabled:not-focus-visible:not-aria-invalid:not-data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 focus-visible:border-ring focus-visible:ring-[3px] aria-invalid:border-destructive/36 focus-visible:aria-invalid:border-destructive/64 focus-visible:aria-invalid:ring-destructive/16 data-disabled:pointer-events-none data-disabled:opacity-64 sm:min-h-8 sm:text-sm dark:bg-input/32 dark:aria-invalid:ring-destructive/24 dark:not-data-disabled:not-focus-visible:not-aria-invalid:not-data-pressed:before:shadow-[0_-1px_--theme(--color-white/6%)] [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [[data-disabled],:focus-visible,[aria-invalid],[data-pressed]]:shadow-none",
@@ -90,6 +140,7 @@ export function SelectTrigger({
 
 export function SelectValue({
   className,
+  children,
   ...props
 }: SelectPrimitive.Value.Props): React.ReactElement {
   return (
@@ -100,7 +151,9 @@ export function SelectValue({
       )}
       data-slot="select-value"
       {...props}
-    />
+    >
+      {children}
+    </SelectPrimitive.Value>
   );
 }
 
@@ -173,15 +226,25 @@ export function SelectPopup({
 export function SelectItem({
   className,
   children,
+  label,
+  value,
   ...props
 }: SelectPrimitive.Item.Props): React.ReactElement {
+  const inferredLabel =
+    label ??
+    (typeof children === "string" || typeof children === "number"
+      ? String(children)
+      : undefined);
+
   return (
     <SelectPrimitive.Item
+      value={value}
       className={cn(
         "grid min-h-8 in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm py-1 ps-2 pe-4 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-64 sm:min-h-7 sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       data-slot="select-item"
+      label={inferredLabel}
       {...props}
     >
       <SelectPrimitive.ItemIndicator className="col-start-1">

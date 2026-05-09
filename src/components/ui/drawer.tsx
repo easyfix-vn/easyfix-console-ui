@@ -36,14 +36,41 @@ export const DrawerCreateHandle: typeof DrawerPrimitive.createHandle =
 export function Drawer({
   swipeDirection,
   position = "bottom",
+  closeOnBackdropClick = true,
+  closeOnEscape = true,
+  onOpenChange,
   ...props
 }: DrawerPrimitive.Root.Props & {
   position?: DrawerPosition;
+  /** 点击遮罩是否关闭。默认 true。设为 false 时强制需要显式点击关闭按钮 */
+  closeOnBackdropClick?: boolean;
+  /** ESC 键是否关闭。默认 true */
+  closeOnEscape?: boolean;
 }): React.ReactElement {
+  /*
+   * - closeOnBackdropClick=false 直接转交给 base-ui 的 disablePointerDismissal
+   * - closeOnEscape=false 通过拦截 onOpenChange 在 reason==="escape-key" 时调用
+   *   details.cancel() 阻止默认关闭行为
+   */
+  const handleOpenChange = React.useCallback<
+    NonNullable<DrawerPrimitive.Root.Props["onOpenChange"]>
+  >(
+    (open, details) => {
+      if (!open && !closeOnEscape && details.reason === "escape-key") {
+        details.cancel();
+        return;
+      }
+      onOpenChange?.(open, details);
+    },
+    [closeOnEscape, onOpenChange],
+  );
+
   return (
     <DrawerContext.Provider value={{ position }}>
       <DrawerPrimitive.Root
         swipeDirection={swipeDirection ?? directionMap[position]}
+        disablePointerDismissal={!closeOnBackdropClick}
+        onOpenChange={handleOpenChange}
         {...props}
       />
     </DrawerContext.Provider>

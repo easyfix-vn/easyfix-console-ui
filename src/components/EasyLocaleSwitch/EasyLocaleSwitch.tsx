@@ -42,7 +42,7 @@ export function EasyLocaleSwitch({
     return (
       <div
         className={cn(
-          "flex rounded-full border border-border bg-muted/50 p-0.5",
+          "flex rounded-full border border-border bg-muted p-0.5",
           className,
         )}
         data-slot="easy-locale-switch"
@@ -72,7 +72,7 @@ export function EasyLocaleSwitch({
               className={cn(
                 "flex items-center justify-center rounded-full text-muted-foreground transition",
                 showLabel ? "gap-1 px-2.5 py-1 text-xs font-medium" : "size-8",
-                active && "bg-background text-foreground shadow-xs",
+                active && "bg-background text-foreground shadow-sm ring-1 ring-border/50",
               )}
             >
               {flagEl}

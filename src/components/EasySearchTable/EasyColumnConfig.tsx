@@ -1,6 +1,6 @@
 import { useId } from 'react'
-import { useTranslation } from 'react-i18next'
 import { GripVertical, Settings2 } from 'lucide-react'
+import { useEasyT } from '@/i18n'
 import {
   DndContext,
   closestCenter,
@@ -103,7 +103,7 @@ export function EasyColumnConfig<T>({
   onOrderChange,
   onReset,
 }: EasyColumnConfigProps<T>) {
-  const { t } = useTranslation()
+  const t = useEasyT()
   const configId = useId()
 
   const allKeys = columns.map((c) => c.key)

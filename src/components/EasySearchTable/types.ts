@@ -4,9 +4,10 @@ import type { ReactNode } from 'react'
 export type SearchFieldDef = {
   key: string
   labelKey: string
-  type: 'input' | 'select'
+  type: 'input' | 'select' | 'dateRange'
   placeholder?: string
   options?: Array<{ label: string; value: string }>
+  showTime?: boolean
 }
 
 // 列配置同时服务表格、默认卡片和默认列表视图。

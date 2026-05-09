@@ -1,0 +1,40 @@
+export const vi = {
+  actions: {
+    add: "Thêm",
+    cancel: "Hủy",
+    confirm: "Xác nhận",
+    collapse: "Thu gọn",
+    expand: "Mở rộng",
+    export: "Xuất",
+    ok: "Đồng ý",
+    reset: "Đặt lại",
+    search: "Tìm kiếm",
+    selectAll: "Chọn tất cả",
+    submit: "Gửi",
+  },
+  searchTable: {
+    columnConfig: "Cấu hình cột",
+    pageInfo: "Trang {{page}} / {{totalPages}}",
+    total: "Tổng {{total}}",
+    views: {
+      card: "Thẻ",
+      list: "Danh sách",
+      table: "Bảng",
+    },
+  },
+  empty: {
+    description: "Không có dữ liệu",
+  },
+  datePicker: {
+    placeholder: "Chọn ngày",
+    placeholderRange: "Chọn khoảng ngày",
+    placeholderDateTime: "Chọn ngày và giờ",
+    placeholderDateTimeRange: "Chọn khoảng ngày-giờ",
+    placeholderTime: "Chọn giờ",
+    startDate: "Ngày bắt đầu",
+    endDate: "Ngày kết thúc",
+    startTime: "Giờ bắt đầu",
+    endTime: "Giờ kết thúc",
+    separator: "đến",
+  },
+} as const;

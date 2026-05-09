@@ -5,18 +5,12 @@ import {
   Dialog,
   DialogBackdrop,
   DialogClose,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogPanel,
-  DialogPopup,
   DialogPortal,
   DialogPrimitive,
-  DialogTitle,
   DialogTrigger,
   DialogViewport,
+  type DialogWidth,
 } from "@/components/ui/dialog";
-import { EasyButton } from "@/components/EasyButton";
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
 
@@ -26,7 +20,7 @@ const sizeClassMap: Record<EasyDialogSize, string> = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-lg",
-  xl: "max-w-xl",
+  xl: "max-w-2xl",
   full: "max-w-full",
 };
 
@@ -42,41 +36,40 @@ export const EasyDialogClose = DialogClose;
 export function EasyDialogPopup({
   className,
   size = "md",
+  width,
   showCloseButton = true,
   children,
   ...props
 }: DialogPrimitive.Popup.Props & {
   size?: EasyDialogSize;
+  /** 自定义宽度，优先于 size。可传预设值或任意 CSS 值如 "600px" */
+  width?: DialogWidth;
   showCloseButton?: boolean;
 }): React.ReactElement {
-  const sizeClass = sizeClassMap[size] ?? sizeClassMap.md;
+  const sizeClass = width ? undefined : (sizeClassMap[size] ?? sizeClassMap.md);
+  const widthStyle = width ? { maxWidth: width } : undefined;
   return (
     <DialogPortal>
       <DialogBackdrop />
       <DialogViewport>
         <DialogPrimitive.Popup
           className={cn(
-            "relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 origin-center flex-col rounded-2xl border bg-popover not-dark:bg-clip-padding text-popover-foreground opacity-[calc(1-var(--nested-dialogs))] shadow-lg/5 outline-none transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:opacity-0 data-starting-style:opacity-0 sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:data-ending-style:scale-98 sm:data-starting-style:scale-98 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+            "relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 origin-center flex-col rounded-xl border border-border bg-background text-foreground shadow-lg outline-none transition-[scale,opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0 sm:scale-[calc(1-0.04*var(--nested-dialogs))] sm:data-ending-style:scale-95 sm:data-starting-style:scale-95",
             sizeClass,
             className,
           )}
           data-slot="easy-dialog-popup"
+          style={widthStyle}
           {...props}
         >
           {children}
           {showCloseButton && (
             <DialogClose
-              render={
-                <EasyButton
-                  aria-label="Close dialog"
-                  className="absolute end-2 top-2"
-                  size="icon-xs"
-                  variant="ghost"
-                >
-                  <XIcon className="size-4" />
-                </EasyButton>
-              }
-            />
+              aria-label="Close dialog"
+              className="absolute end-3 top-3 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <XIcon aria-hidden="true" className="size-4" />
+            </DialogClose>
           )}
         </DialogPrimitive.Popup>
       </DialogViewport>
@@ -90,7 +83,11 @@ export function EasyDialogHeader({
 }: React.HTMLAttributes<HTMLDivElement>): React.ReactElement {
   return (
     <div
-      className={cn("space-y-1.5 px-6 pt-5 pb-4 pr-12", className)}
+      className={cn(
+        // 留出关闭按钮位置（end-12），底部分隔线统一视觉
+        "flex flex-col gap-1.5 border-b border-border px-6 py-4 pe-12",
+        className,
+      )}
       data-slot="easy-dialog-header"
       {...props}
     />
@@ -103,7 +100,7 @@ export function EasyDialogBody({
 }: React.HTMLAttributes<HTMLDivElement>): React.ReactElement {
   return (
     <div
-      className={cn("min-h-0 flex-1 overflow-auto px-6", className)}
+      className={cn("min-h-0 flex-1 overflow-auto px-6 py-5 text-sm", className)}
       data-slot="easy-dialog-body"
       {...props}
     />
@@ -117,7 +114,8 @@ export function EasyDialogFooter({
   return (
     <div
       className={cn(
-        "flex flex-col-reverse gap-2 border-t bg-muted/40 px-6 py-3 sm:flex-row sm:justify-end sm:rounded-b-[calc(var(--radius-2xl)-1px)]",
+        // 标准对话框底部按钮区：右对齐、统一边距，无背景色减少视觉压力
+        "flex flex-col-reverse gap-2 border-t border-border px-6 py-3 sm:flex-row sm:items-center sm:justify-end",
         className,
       )}
       data-slot="easy-dialog-footer"
@@ -132,7 +130,10 @@ export function EasyDialogTitle({
 }: DialogPrimitive.Title.Props): React.ReactElement {
   return (
     <DialogPrimitive.Title
-      className={cn("font-heading font-semibold text-xl leading-none", className)}
+      className={cn(
+        "font-heading text-lg font-semibold leading-none tracking-tight text-foreground",
+        className,
+      )}
       data-slot="easy-dialog-title"
       {...props}
     />
@@ -145,7 +146,7 @@ export function EasyDialogDescription({
 }: DialogPrimitive.Description.Props): React.ReactElement {
   return (
     <DialogPrimitive.Description
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       data-slot="easy-dialog-description"
       {...props}
     />
@@ -159,6 +160,8 @@ export type EasyDialogProps = DialogPrimitive.Root.Props & {
   footer?: React.ReactNode;
   children: React.ReactNode;
   size?: EasyDialogSize;
+  /** 自定义宽度，优先于 size。可传预设值或任意 CSS 值如 "600px" */
+  width?: DialogWidth;
   contentClassName?: string;
   showCloseButton?: boolean;
 };
@@ -170,6 +173,7 @@ export function EasyDialog({
   footer,
   children,
   size = "md",
+  width,
   contentClassName,
   showCloseButton = true,
   ...props
@@ -181,6 +185,7 @@ export function EasyDialog({
         className={contentClassName}
         showCloseButton={showCloseButton}
         size={size}
+        width={width}
       >
         {(title || description) && (
           <EasyDialogHeader>

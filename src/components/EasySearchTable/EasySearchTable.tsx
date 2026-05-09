@@ -1,10 +1,15 @@
 import { useEffect, useState, useMemo } from 'react'
 import type { ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Download, LayoutGrid, List, Plus, Table2 } from 'lucide-react'
+import { useEasyT } from '@/i18n'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  SegmentedControl,
+  SegmentedControlList,
+  SegmentedControlItem,
+} from '@/components/ui/segmented-control'
 import {
   Popover,
   PopoverContent,
@@ -91,10 +96,19 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   renderCard,
   renderListItem,
 }: EasySearchTableProps<T>) {
-  const { t } = useTranslation()
+  const t = useEasyT()
   const [columnOrder, setColumnOrder] = useState(() => getColumnOrder(columns))
   const [visibleKeys, setVisibleKeys] = useState(() => getDefaultVisibleKeys(columns))
-  const [view, setView] = useState<SearchTableView>(defaultView)
+  const availableViews = useMemo(() => {
+    const views: SearchTableView[] = ['table']
+    if (renderCard) views.push('card')
+    if (renderListItem) views.push('list')
+    return views
+  }, [renderCard, renderListItem])
+
+  const [view, setView] = useState<SearchTableView>(() =>
+    availableViews.includes(defaultView) ? defaultView : availableViews[0],
+  )
   const [searchValues, setSearchValues] = useState<Record<string, unknown>>({})
   const [exportOpen, setExportOpen] = useState(false)
 
@@ -134,7 +148,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const exportParams = useMemo(() => ({ ...searchValues }), [searchValues])
 
-  function handleSearch(values: Record<string, string>) {
+  function handleSearch(values: Record<string, unknown>) {
     setSearchValues(values)
     onSearch({ page: 1, pageSize, ...values })
   }
@@ -432,24 +446,24 @@ export function EasySearchTable<T extends Record<string, unknown>>({
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="flex items-center rounded-md border border-[var(--border)] p-1">
-              {(['table', 'card', 'list'] as SearchTableView[]).map((item) => {
-                const Icon = viewIcons[item]
-                return (
-                  <Button
-                    key={item}
-                    variant={view === item ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="h-7 gap-1.5 px-2"
-                    onClick={() => setView(item)}
-                    title={t(`searchTable.views.${item}`)}
-                  >
-                    <Icon className="size-3.5" />
-                    <span className="hidden sm:inline">{t(`searchTable.views.${item}`)}</span>
-                  </Button>
-                )
-              })}
-            </div>
+            {availableViews.length > 1 && (
+              <SegmentedControl
+                value={view}
+                onValueChange={(v) => setView(v as SearchTableView)}
+              >
+                <SegmentedControlList className="h-8">
+                  {availableViews.map((item) => {
+                    const Icon = viewIcons[item]
+                    return (
+                      <SegmentedControlItem key={item} value={item}>
+                        <Icon className="size-3.5" />
+                        <span className="hidden sm:inline">{t(`searchTable.views.${item}`)}</span>
+                      </SegmentedControlItem>
+                    )
+                  })}
+                </SegmentedControlList>
+              </SegmentedControl>
+            )}
             <EasyColumnConfig
               columns={orderedColumns}
               visibleKeys={visibleKeys}

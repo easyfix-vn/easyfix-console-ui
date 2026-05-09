@@ -1,0 +1,40 @@
+export const zhCN = {
+  actions: {
+    add: "新增",
+    cancel: "取消",
+    confirm: "确定",
+    collapse: "收起",
+    expand: "展开",
+    export: "导出",
+    ok: "确定",
+    reset: "重置",
+    search: "搜索",
+    selectAll: "全选",
+    submit: "提交",
+  },
+  searchTable: {
+    columnConfig: "列配置",
+    pageInfo: "第 {{page}} / {{totalPages}} 页",
+    total: "共 {{total}} 条",
+    views: {
+      card: "卡片",
+      list: "列表",
+      table: "表格",
+    },
+  },
+  empty: {
+    description: "暂无数据",
+  },
+  datePicker: {
+    placeholder: "选择日期",
+    placeholderRange: "选择日期范围",
+    placeholderDateTime: "选择日期和时间",
+    placeholderDateTimeRange: "选择日期时间范围",
+    placeholderTime: "选择时间",
+    startDate: "开始日期",
+    endDate: "结束日期",
+    startTime: "开始时间",
+    endTime: "结束时间",
+    separator: "至",
+  },
+} as const;

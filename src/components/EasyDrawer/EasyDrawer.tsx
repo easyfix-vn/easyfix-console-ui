@@ -2,8 +2,7 @@
 
 import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer";
 import { XIcon } from "lucide-react";
-import type React from "react";
-import { EasyButton } from "@/components/EasyButton";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export type EasyDrawerPosition = "right" | "left" | "top" | "bottom";
@@ -23,20 +22,40 @@ const widthClassMap: Record<EasyDrawerWidth, string> = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-lg",
-  xl: "max-w-xl",
+  xl: "max-w-2xl",
   full: "max-w-full",
 };
 
 export function EasyDrawerRoot({
   position = "right",
   swipeDirection,
+  closeOnBackdropClick = true,
+  closeOnEscape = true,
+  onOpenChange,
   ...props
 }: DrawerPrimitive.Root.Props & {
   position?: EasyDrawerPosition;
+  closeOnBackdropClick?: boolean;
+  closeOnEscape?: boolean;
 }): React.ReactElement {
+  const handleOpenChange = React.useCallback<
+    NonNullable<DrawerPrimitive.Root.Props["onOpenChange"]>
+  >(
+    (open, details) => {
+      if (!open && !closeOnEscape && details.reason === "escape-key") {
+        details.cancel();
+        return;
+      }
+      onOpenChange?.(open, details);
+    },
+    [closeOnEscape, onOpenChange],
+  );
+
   return (
     <DrawerPrimitive.Root
       swipeDirection={swipeDirection ?? directionMap[position]}
+      disablePointerDismissal={!closeOnBackdropClick}
+      onOpenChange={handleOpenChange}
       {...props}
     />
   );
@@ -55,7 +74,7 @@ export function EasyDrawerBackdrop({
   return (
     <DrawerPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 bg-black/32 backdrop-blur-sm transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       data-slot="easy-drawer-backdrop"
@@ -82,15 +101,21 @@ export function EasyDrawerPopup({
       <EasyDrawerBackdrop />
       <DrawerPrimitive.Popup
         className={cn(
-          "fixed z-50 flex max-h-full min-h-0 flex-col border-border bg-popover text-popover-foreground shadow-lg outline-none transition-transform duration-300 data-ending-style:opacity-0 data-starting-style:opacity-0",
+          "fixed z-50 flex max-h-full min-h-0 flex-col bg-background text-foreground shadow-xl outline-none transition-transform duration-300 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0",
           position === "right" &&
-            cn("inset-y-0 right-0 w-[calc(100%-3rem)] border-l data-ending-style:translate-x-full data-starting-style:translate-x-full", widthClass),
+            cn(
+              "inset-y-0 end-0 w-[calc(100%-3rem)] border-s border-border data-ending-style:translate-x-full data-starting-style:translate-x-full",
+              widthClass,
+            ),
           position === "left" &&
-            cn("inset-y-0 left-0 w-[calc(100%-3rem)] border-r data-ending-style:-translate-x-full data-starting-style:-translate-x-full", widthClass),
+            cn(
+              "inset-y-0 start-0 w-[calc(100%-3rem)] border-e border-border data-ending-style:-translate-x-full data-starting-style:-translate-x-full",
+              widthClass,
+            ),
           position === "bottom" &&
-            "inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl border-t data-ending-style:translate-y-full data-starting-style:translate-y-full",
+            "inset-x-0 bottom-0 max-h-[85vh] rounded-t-xl border-t border-border data-ending-style:translate-y-full data-starting-style:translate-y-full",
           position === "top" &&
-            "inset-x-0 top-0 max-h-[85vh] rounded-b-2xl border-b data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
+            "inset-x-0 top-0 max-h-[85vh] rounded-b-xl border-b border-border data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
           className,
         )}
         data-slot="easy-drawer-popup"
@@ -98,17 +123,11 @@ export function EasyDrawerPopup({
       >
         {showCloseButton && (
           <EasyDrawerClose
-            render={
-              <EasyButton
-                aria-label="Close drawer"
-                className="absolute right-3 top-3 z-10"
-                size="icon-xs"
-                variant="ghost"
-              >
-                <XIcon className="size-4" />
-              </EasyButton>
-            }
-          />
+            aria-label="Close drawer"
+            className="absolute end-3 top-3 z-10 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <XIcon aria-hidden="true" className="size-4" />
+          </EasyDrawerClose>
         )}
         {children}
       </DrawerPrimitive.Popup>
@@ -122,7 +141,10 @@ export function EasyDrawerHeader({
 }: React.HTMLAttributes<HTMLDivElement>): React.ReactElement {
   return (
     <div
-      className={cn("space-y-1.5 border-b border-border p-4 pr-12", className)}
+      className={cn(
+        "flex flex-col gap-1.5 border-b border-border px-6 py-4 pe-12",
+        className,
+      )}
       data-slot="easy-drawer-header"
       {...props}
     />
@@ -135,7 +157,7 @@ export function EasyDrawerBody({
 }: React.HTMLAttributes<HTMLDivElement>): React.ReactElement {
   return (
     <div
-      className={cn("min-h-0 flex-1 overflow-auto p-4", className)}
+      className={cn("min-h-0 flex-1 overflow-auto px-6 py-5 text-sm", className)}
       data-slot="easy-drawer-body"
       {...props}
     />
@@ -148,7 +170,10 @@ export function EasyDrawerFooter({
 }: React.HTMLAttributes<HTMLDivElement>): React.ReactElement {
   return (
     <div
-      className={cn("flex justify-end gap-2 border-t border-border p-4", className)}
+      className={cn(
+        "flex flex-col-reverse gap-2 border-t border-border px-6 py-3 sm:flex-row sm:items-center sm:justify-end",
+        className,
+      )}
       data-slot="easy-drawer-footer"
       {...props}
     />
@@ -164,6 +189,9 @@ export type EasyDrawerProps = DrawerPrimitive.Root.Props & {
   position?: EasyDrawerPosition;
   width?: EasyDrawerWidth;
   contentClassName?: string;
+  showCloseButton?: boolean;
+  closeOnBackdropClick?: boolean;
+  closeOnEscape?: boolean;
 };
 
 export function EasyDrawer({
@@ -175,15 +203,32 @@ export function EasyDrawer({
   position = "right",
   width = "md",
   contentClassName,
+  showCloseButton = true,
+  closeOnBackdropClick,
+  closeOnEscape,
   ...props
 }: EasyDrawerProps): React.ReactElement {
   return (
-    <EasyDrawerRoot position={position} {...props}>
+    <EasyDrawerRoot
+      position={position}
+      closeOnBackdropClick={closeOnBackdropClick}
+      closeOnEscape={closeOnEscape}
+      {...props}
+    >
       {trigger && <EasyDrawerTrigger render={trigger} />}
-      <EasyDrawerPopup className={contentClassName} position={position} width={width}>
+      <EasyDrawerPopup
+        className={contentClassName}
+        position={position}
+        showCloseButton={showCloseButton}
+        width={width}
+      >
         {(title || description) && (
           <EasyDrawerHeader>
-            {title && <EasyDrawerTitle className="font-semibold">{title}</EasyDrawerTitle>}
+            {title && (
+              <EasyDrawerTitle className="text-lg font-semibold leading-none tracking-tight text-foreground">
+                {title}
+              </EasyDrawerTitle>
+            )}
             {description && (
               <EasyDrawerDescription className="text-sm text-muted-foreground">
                 {description}

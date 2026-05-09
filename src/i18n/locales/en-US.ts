@@ -1,0 +1,40 @@
+export const enUS = {
+  actions: {
+    add: "Add",
+    cancel: "Cancel",
+    confirm: "Confirm",
+    collapse: "Collapse",
+    expand: "Expand",
+    export: "Export",
+    ok: "OK",
+    reset: "Reset",
+    search: "Search",
+    selectAll: "Select all",
+    submit: "Submit",
+  },
+  searchTable: {
+    columnConfig: "Columns",
+    pageInfo: "Page {{page}} / {{totalPages}}",
+    total: "Total {{total}}",
+    views: {
+      card: "Card",
+      list: "List",
+      table: "Table",
+    },
+  },
+  empty: {
+    description: "No data",
+  },
+  datePicker: {
+    placeholder: "Select date",
+    placeholderRange: "Select date range",
+    placeholderDateTime: "Select date & time",
+    placeholderDateTimeRange: "Select date-time range",
+    placeholderTime: "Select time",
+    startDate: "Start date",
+    endDate: "End date",
+    startTime: "Start time",
+    endTime: "End time",
+    separator: "to",
+  },
+} as const;

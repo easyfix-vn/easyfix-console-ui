@@ -7,7 +7,18 @@ import {
 } from "lucide-react";
 import type * as React from "react";
 import { DayPicker } from "react-day-picker";
+import { enUS } from "date-fns/locale/en-US";
+import { vi as viLocale } from "date-fns/locale/vi";
+import { zhCN } from "date-fns/locale/zh-CN";
+import type { EasyLocale } from "@/i18n";
+import { useEasyI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
+
+const dateFnsLocaleMap: Record<EasyLocale, import("date-fns").Locale> = {
+  "zh-CN": zhCN,
+  "en-US": enUS,
+  vi: viLocale,
+};
 
 const buttonClassNames =
   "relative flex size-(--cell-size) text-base sm:text-sm items-center justify-center rounded-lg text-foreground not-in-data-selected:hover:bg-accent disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0";
@@ -18,8 +29,11 @@ export function Calendar({
   showOutsideDays = true,
   components: userComponents,
   mode = "single",
+  locale: localeProp,
   ...props
 }: React.ComponentProps<typeof DayPicker>): React.ReactElement {
+  const { locale: easyLocale } = useEasyI18n();
+  const resolvedLocale = localeProp ?? dateFnsLocaleMap[easyLocale] ?? zhCN;
   const defaultClassNames = {
     button_next: buttonClassNames,
     button_previous: buttonClassNames,
@@ -126,6 +140,7 @@ export function Calendar({
       formatMonthDropdown: (date: Date) =>
         date.toLocaleString("default", { month: "short" }),
     } as React.ComponentProps<typeof DayPicker>["formatters"],
+    locale: resolvedLocale,
     mode,
     showOutsideDays,
     ...props,

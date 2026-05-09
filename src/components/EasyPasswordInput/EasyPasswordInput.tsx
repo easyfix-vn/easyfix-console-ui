@@ -2,61 +2,65 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import * as React from "react";
-import { Input, type InputProps } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { EasyInput, type EasyInputProps } from "@/components/EasyInput";
 
-export type EasyPasswordInputProps = Omit<InputProps, "onChange" | "type"> & {
+export type EasyPasswordInputProps = Omit<EasyInputProps, "type" | "suffix"> & {
+  /** 默认是否可见 */
   defaultVisible?: boolean;
-  height?: "default" | "comfortable";
+  /** 切换可见时显示的辅助文本（aria-label） */
   visibilityLabel?: string;
+  /** 切换隐藏时显示的辅助文本（aria-label） */
   hiddenLabel?: string;
-  onChange?: React.ChangeEventHandler<HTMLInputElement>;
-  wrapperClassName?: string;
+  /** 自定义额外的 suffix 内容（追加在显示/隐藏图标之后） */
+  extraSuffix?: React.ReactNode;
 };
 
+/**
+ * 密码输入框：基于 EasyInput 复用 prefix / allowClear / showCount 等能力，
+ * 在 suffix 中固定显示 显示/隐藏 切换按钮。
+ */
 export const EasyPasswordInput = React.forwardRef<
   HTMLInputElement,
   EasyPasswordInputProps
 >(function EasyPasswordInput(
   {
-    className,
     defaultVisible = false,
     disabled,
-    height = "default",
     hiddenLabel = "Hide password",
     visibilityLabel = "Show password",
-    wrapperClassName,
+    extraSuffix,
     ...props
   },
   ref,
-): React.ReactElement {
+) {
   const [visible, setVisible] = React.useState(defaultVisible);
   const Icon = visible ? EyeOff : Eye;
 
+  const visibilityToggle = (
+    <button
+      aria-label={visible ? hiddenLabel : visibilityLabel}
+      aria-pressed={visible}
+      className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+      disabled={disabled}
+      onClick={() => setVisible((current) => !current)}
+      type="button"
+    >
+      <Icon aria-hidden="true" className="size-4" />
+    </button>
+  );
+
   return (
-    <div className={cn("relative", wrapperClassName)} data-slot="easy-password-input">
-      <Input
-        ref={ref}
-        className={cn(
-          "[&_[data-slot=input]]:pr-10",
-          height === "comfortable" &&
-            "h-[38px] [&_[data-slot=input]]:h-full [&_[data-slot=input]]:leading-9",
-          className,
-        )}
-        disabled={disabled}
-        type={visible ? "text" : "password"}
-        {...props}
-      />
-      <button
-        aria-label={visible ? hiddenLabel : visibilityLabel}
-        aria-pressed={visible}
-        className="absolute right-2 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-        disabled={disabled}
-        onClick={() => setVisible((current) => !current)}
-        type="button"
-      >
-        <Icon aria-hidden="true" className="size-4" />
-      </button>
-    </div>
+    <EasyInput
+      ref={ref}
+      type={visible ? "text" : "password"}
+      disabled={disabled}
+      suffix={
+        <>
+          {visibilityToggle}
+          {extraSuffix}
+        </>
+      }
+      {...props}
+    />
   );
 });
