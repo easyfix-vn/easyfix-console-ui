@@ -418,6 +418,7 @@ export {
   ToastProvider,
   AnchoredToastProvider,
   type ToastPosition,
+  type ToastAddOptions,
   type ToastProviderProps,
   type AnchoredToastProviderProps,
   ToastPrimitive,

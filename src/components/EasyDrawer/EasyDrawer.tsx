@@ -83,6 +83,30 @@ export function EasyDrawerBackdrop({
   );
 }
 
+export function EasyDrawerViewport({
+  className,
+  position = "right",
+  ...props
+}: DrawerPrimitive.Viewport.Props & {
+  position?: EasyDrawerPosition;
+}): React.ReactElement {
+  return (
+    <DrawerPrimitive.Viewport
+      className={cn(
+        "fixed inset-0 z-50",
+        (position === "right" || position === "left") && "flex items-stretch",
+        position === "right" && "justify-end",
+        position === "left" && "justify-start",
+        position === "bottom" && "flex flex-col justify-end",
+        position === "top" && "flex flex-col justify-start",
+        className,
+      )}
+      data-slot="easy-drawer-viewport"
+      {...props}
+    />
+  );
+}
+
 export function EasyDrawerPopup({
   className,
   position = "right",
@@ -99,38 +123,39 @@ export function EasyDrawerPopup({
   return (
     <EasyDrawerPortal>
       <EasyDrawerBackdrop />
-      <DrawerPrimitive.Popup
-        className={cn(
-          "fixed z-50 flex max-h-full min-h-0 flex-col bg-background text-foreground shadow-xl outline-none transition-transform duration-300 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0",
-          position === "right" &&
-            cn(
-              "inset-y-0 end-0 w-[calc(100%-3rem)] border-s border-border data-ending-style:translate-x-full data-starting-style:translate-x-full",
-              widthClass,
-            ),
-          position === "left" &&
-            cn(
-              "inset-y-0 start-0 w-[calc(100%-3rem)] border-e border-border data-ending-style:-translate-x-full data-starting-style:-translate-x-full",
-              widthClass,
-            ),
-          position === "bottom" &&
-            "inset-x-0 bottom-0 max-h-[85vh] rounded-t-xl border-t border-border data-ending-style:translate-y-full data-starting-style:translate-y-full",
-          position === "top" &&
-            "inset-x-0 top-0 max-h-[85vh] rounded-b-xl border-b border-border data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
-          className,
-        )}
-        data-slot="easy-drawer-popup"
-        {...props}
-      >
-        {showCloseButton && (
-          <EasyDrawerClose
-            aria-label="Close drawer"
-            className="absolute end-3 top-3 z-10 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <XIcon aria-hidden="true" className="size-4" />
-          </EasyDrawerClose>
-        )}
-        {children}
-      </DrawerPrimitive.Popup>
+      <EasyDrawerViewport position={position}>
+        <DrawerPrimitive.Popup
+          className={cn(
+            "flex max-h-full min-h-0 flex-col bg-background text-foreground shadow-xl outline-none transition-transform duration-300 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0",
+            (position === "right" || position === "left") &&
+              cn(
+                "h-full w-[calc(100vw-3rem)]",
+                widthClass,
+              ),
+            position === "right" &&
+              "border-s border-border data-ending-style:translate-x-full data-starting-style:translate-x-full",
+            position === "left" &&
+              "border-e border-border data-ending-style:-translate-x-full data-starting-style:-translate-x-full",
+            position === "bottom" &&
+              "max-h-[85vh] w-full rounded-t-xl border-t border-border data-ending-style:translate-y-full data-starting-style:translate-y-full",
+            position === "top" &&
+              "max-h-[85vh] w-full rounded-b-xl border-b border-border data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
+            className,
+          )}
+          data-slot="easy-drawer-popup"
+          {...props}
+        >
+          {showCloseButton && (
+            <EasyDrawerClose
+              aria-label="Close drawer"
+              className="absolute end-3 top-3 z-10 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <XIcon aria-hidden="true" className="size-4" />
+            </EasyDrawerClose>
+          )}
+          {children}
+        </DrawerPrimitive.Popup>
+      </EasyDrawerViewport>
     </EasyDrawerPortal>
   );
 }

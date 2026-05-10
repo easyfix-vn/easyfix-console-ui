@@ -12,6 +12,7 @@ export {
   EasyDrawerRoot,
   EasyDrawerTitle,
   EasyDrawerTrigger,
+  EasyDrawerViewport,
   type EasyDrawerPosition,
   type EasyDrawerProps,
 } from "./EasyDrawer";

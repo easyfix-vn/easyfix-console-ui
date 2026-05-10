@@ -58,7 +58,7 @@ export { Tabs, TabsList, TabsTab, TabsPanel, type TabsVariant, TabsPrimitive, Ta
 export { SegmentedControl, SegmentedControlList, SegmentedControlItem } from "./segmented-control";
 export { Steps, StepItem, type StepsProps, type StepItemProps, type StepStatus } from "./steps";
 export { Textarea, type TextareaProps } from "./textarea";
-export { toastManager, anchoredToastManager, ToastProvider, AnchoredToastProvider, type ToastPosition, type ToastProviderProps, type AnchoredToastProviderProps, ToastPrimitive } from "./toast";
+export { toastManager, anchoredToastManager, ToastProvider, AnchoredToastProvider, type ToastPosition, type ToastAddOptions, type ToastProviderProps, type AnchoredToastProviderProps, ToastPrimitive } from "./toast";
 export { ToggleGroupContext, ToggleGroup, ToggleGroupItem, ToggleGroupSeparator, ToggleGroupPrimitive } from "./toggle-group";
 export { toggleVariants, Toggle, TogglePrimitive } from "./toggle";
 export { Toolbar, ToolbarButton, ToolbarLink, ToolbarInput, ToolbarGroup, ToolbarSeparator, ToolbarPrimitive } from "./toolbar";
