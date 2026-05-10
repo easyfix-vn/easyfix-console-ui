@@ -31,12 +31,14 @@ export function EasyDrawerRoot({
   swipeDirection,
   closeOnBackdropClick = true,
   closeOnEscape = true,
+  closeOnSwipe = true,
   onOpenChange,
   ...props
 }: DrawerPrimitive.Root.Props & {
   position?: EasyDrawerPosition;
   closeOnBackdropClick?: boolean;
   closeOnEscape?: boolean;
+  closeOnSwipe?: boolean;
 }): React.ReactElement {
   const handleOpenChange = React.useCallback<
     NonNullable<DrawerPrimitive.Root.Props["onOpenChange"]>
@@ -46,9 +48,13 @@ export function EasyDrawerRoot({
         details.cancel();
         return;
       }
+      if (!open && !closeOnSwipe && details.reason === "swipe") {
+        details.cancel();
+        return;
+      }
       onOpenChange?.(open, details);
     },
-    [closeOnEscape, onOpenChange],
+    [closeOnEscape, closeOnSwipe, onOpenChange],
   );
 
   return (
@@ -217,6 +223,7 @@ export type EasyDrawerProps = DrawerPrimitive.Root.Props & {
   showCloseButton?: boolean;
   closeOnBackdropClick?: boolean;
   closeOnEscape?: boolean;
+  closeOnSwipe?: boolean;
 };
 
 export function EasyDrawer({
@@ -231,6 +238,7 @@ export function EasyDrawer({
   showCloseButton = true,
   closeOnBackdropClick,
   closeOnEscape,
+  closeOnSwipe,
   ...props
 }: EasyDrawerProps): React.ReactElement {
   return (
@@ -238,6 +246,7 @@ export function EasyDrawer({
       position={position}
       closeOnBackdropClick={closeOnBackdropClick}
       closeOnEscape={closeOnEscape}
+      closeOnSwipe={closeOnSwipe}
       {...props}
     >
       {trigger && <EasyDrawerTrigger render={trigger} />}

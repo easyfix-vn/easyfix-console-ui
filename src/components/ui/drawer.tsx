@@ -38,6 +38,7 @@ export function Drawer({
   position = "bottom",
   closeOnBackdropClick = true,
   closeOnEscape = true,
+  closeOnSwipe = true,
   onOpenChange,
   ...props
 }: DrawerPrimitive.Root.Props & {
@@ -46,12 +47,9 @@ export function Drawer({
   closeOnBackdropClick?: boolean;
   /** ESC 键是否关闭。默认 true */
   closeOnEscape?: boolean;
+  /** 拖拽（滑动）是否关闭。默认 true。设为 false 时禁止拖拽关闭抽屉 */
+  closeOnSwipe?: boolean;
 }): React.ReactElement {
-  /*
-   * - closeOnBackdropClick=false 直接转交给 base-ui 的 disablePointerDismissal
-   * - closeOnEscape=false 通过拦截 onOpenChange 在 reason==="escape-key" 时调用
-   *   details.cancel() 阻止默认关闭行为
-   */
   const handleOpenChange = React.useCallback<
     NonNullable<DrawerPrimitive.Root.Props["onOpenChange"]>
   >(
@@ -60,9 +58,13 @@ export function Drawer({
         details.cancel();
         return;
       }
+      if (!open && !closeOnSwipe && details.reason === "swipe") {
+        details.cancel();
+        return;
+      }
       onOpenChange?.(open, details);
     },
-    [closeOnEscape, onOpenChange],
+    [closeOnEscape, closeOnSwipe, onOpenChange],
   );
 
   return (
