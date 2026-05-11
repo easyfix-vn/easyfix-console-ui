@@ -14,6 +14,7 @@ export const enUS = {
   },
   searchTable: {
     columnConfig: "Columns",
+    empty: "No data",
     pageInfo: "Page {{page}} / {{totalPages}}",
     total: "Total {{total}}",
     views: {
@@ -36,5 +37,11 @@ export const enUS = {
     startTime: "Start time",
     endTime: "End time",
     separator: "to",
+  },
+  globalPhone: {
+    placeholder: "Enter phone number",
+    invalidLength: "Phone number must be {{length}} digits",
+    invalidFormat: "Invalid phone number format",
+    noLeadingZero: "Phone number cannot start with 0",
   },
 } as const;

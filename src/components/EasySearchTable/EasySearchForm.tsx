@@ -62,50 +62,56 @@ export function EasySearchForm({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {visibleFields.map((field) => (
-          <div key={field.key} className="flex min-w-0 items-center gap-2">
-            <label className="shrink-0 text-sm font-medium text-foreground">
-              {t(field.labelKey)}
-            </label>
-            {field.type === 'input' ? (
-              <Input
-                placeholder={field.placeholder}
-                value={(values[field.key] as string) ?? ''}
-                onChange={(e) => handleChange(field.key, e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
-            ) : field.type === 'dateRange' ? (
-              <DateRangePicker
-                value={values[field.key] as DateRangeValue | undefined}
-                onChange={(v) => handleChange(field.key, v)}
-                placeholder={field.placeholder}
-                showTime={field.showTime}
-                className="w-full"
-              />
-            ) : (
-              <Select
-                value={(values[field.key] as string) ?? ''}
-                onValueChange={(v) => v !== null && handleChange(field.key, v)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={field.placeholder} />
-                </SelectTrigger>
-                <SelectContent>
-                  {field.options?.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {visibleFields.map((field) => (
+        <div
+          key={field.key}
+          className="flex min-w-0 items-center gap-2"
+          style={field.colSpan ? { gridColumn: `span ${field.colSpan}` } : undefined}
+        >
+          <label className="shrink-0 text-sm font-medium text-foreground">
+            {t(field.labelKey)}
+          </label>
+          {field.type === 'input' ? (
+            <Input
+              placeholder={field.placeholder}
+              value={(values[field.key] as string) ?? ''}
+              onChange={(e) => handleChange(field.key, e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+          ) : field.type === 'dateRange' ? (
+            <DateRangePicker
+              value={values[field.key] as DateRangeValue | undefined}
+              onChange={(v) => handleChange(field.key, v)}
+              placeholder={field.placeholder}
+              showTime={field.showTime}
+              className="w-full"
+            />
+          ) : field.type === 'custom' ? (
+            <div className="min-w-0 flex-1">
+              {field.render(values[field.key], (v) => handleChange(field.key, v))}
+            </div>
+          ) : (
+            <Select
+              value={(values[field.key] as string) ?? ''}
+              onValueChange={(v) => v !== null && handleChange(field.key, v)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={field.placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {field.options?.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      ))}
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2" style={{ gridColumnEnd: -1 }}>
         <Button variant="outline" size="sm" onClick={handleReset}>
           {t('actions.reset')}
         </Button>

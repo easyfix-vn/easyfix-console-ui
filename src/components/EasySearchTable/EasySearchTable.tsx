@@ -1,6 +1,7 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, type CSSProperties } from 'react'
 import type { ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, Download, LayoutGrid, List, Plus, Table2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useEasyT } from '@/i18n'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -49,6 +50,7 @@ export type EasySearchTableProps<T> = {
   onSearch: (params: SearchParams) => void
   loading?: boolean
   defaultView?: SearchTableView
+  views?: SearchTableView[]
   skeletonRows?: number
   toolbarLeft?: ReactNode
   onAdd?: () => void
@@ -86,6 +88,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   onSearch,
   loading,
   defaultView = 'table',
+  views: viewsProp,
   skeletonRows = 5,
   toolbarLeft,
   onAdd,
@@ -100,11 +103,12 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   const [columnOrder, setColumnOrder] = useState(() => getColumnOrder(columns))
   const [visibleKeys, setVisibleKeys] = useState(() => getDefaultVisibleKeys(columns))
   const availableViews = useMemo(() => {
+    if (viewsProp) return viewsProp
     const views: SearchTableView[] = ['table']
     if (renderCard) views.push('card')
     if (renderListItem) views.push('list')
     return views
-  }, [renderCard, renderListItem])
+  }, [viewsProp, renderCard, renderListItem])
 
   const [view, setView] = useState<SearchTableView>(() =>
     availableViews.includes(defaultView) ? defaultView : availableViews[0],
@@ -144,6 +148,26 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     () => visibleColumns.filter((c) => c.exportable !== false),
     [visibleColumns],
   )
+
+  const stickyStyles = useMemo(() => {
+    const styles = new Map<string, CSSProperties>()
+    let leftOffset = 0
+    for (const col of visibleColumns) {
+      if (col.fixed === 'left') {
+        styles.set(col.key, { position: 'sticky', left: leftOffset, zIndex: 2 })
+        leftOffset += (typeof col.width === 'number' ? col.width : 120)
+      }
+    }
+    let rightOffset = 0
+    for (let i = visibleColumns.length - 1; i >= 0; i--) {
+      const col = visibleColumns[i]
+      if (col.fixed === 'right') {
+        styles.set(col.key, { position: 'sticky', right: rightOffset, zIndex: 2 })
+        rightOffset += (typeof col.width === 'number' ? col.width : 120)
+      }
+    }
+    return styles
+  }, [visibleColumns])
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const exportParams = useMemo(() => ({ ...searchValues }), [searchValues])
@@ -233,17 +257,17 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   function renderDefaultCard(record: T) {
     const [titleColumn, ...detailColumns] = visibleColumns
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition-shadow duration-200 hover:shadow-md">
         {titleColumn && (
-          <div className="mb-3 truncate text-base font-semibold text-[var(--card-foreground)]">
+          <div className="mb-3 truncate border-b border-[var(--border)] pb-3 text-base font-semibold text-[var(--card-foreground)]">
             {renderCell(record, titleColumn)}
           </div>
         )}
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {detailColumns.map((col) => (
             <div key={col.key} className="flex items-start justify-between gap-3 text-sm">
               <span className="shrink-0 text-[var(--muted-foreground)]">{t(col.headerKey)}</span>
-              <span className="min-w-0 truncate text-right">{renderCell(record, col)}</span>
+              <span className="min-w-0 truncate text-right text-[var(--card-foreground)]">{renderCell(record, col)}</span>
             </div>
           ))}
         </div>
@@ -254,16 +278,16 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   function renderDefaultListItem(record: T) {
     const [titleColumn, ...detailColumns] = visibleColumns
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition-colors duration-200 hover:bg-[var(--accent)]/50">
         <div className="grid gap-3 md:grid-cols-[minmax(180px,1.2fr)_minmax(0,2fr)] md:items-center">
           <div className="min-w-0 truncate text-base font-semibold text-[var(--card-foreground)]">
             {titleColumn ? renderCell(record, titleColumn) : '—'}
           </div>
-          <div className="grid min-w-0 gap-2 text-sm sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid min-w-0 gap-x-4 gap-y-2 text-sm sm:grid-cols-2 xl:grid-cols-3">
             {detailColumns.map((col) => (
               <div key={col.key} className="flex min-w-0 items-center gap-1.5">
-                <span className="shrink-0 text-[var(--muted-foreground)]">{t(col.headerKey)}</span>
-                <span className="min-w-0 truncate">{renderCell(record, col)}</span>
+                <span className="shrink-0 text-xs text-[var(--muted-foreground)]">{t(col.headerKey)}</span>
+                <span className="min-w-0 truncate text-[var(--card-foreground)]">{renderCell(record, col)}</span>
               </div>
             ))}
           </div>
@@ -313,7 +337,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
 
     return (
       <div className="overflow-x-auto rounded-md border border-[var(--border)]">
-        <Table className="min-w-[720px] table-fixed">
+        <Table className="w-full table-auto">
           <TableHeader>
             <TableRow>
               {visibleColumns.map((col) => (
@@ -344,10 +368,10 @@ export function EasySearchTable<T extends Record<string, unknown>>({
 
     if (view === 'card') {
       return (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {data.length === 0 ? (
-            <div className="col-span-full flex h-24 items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--muted-foreground)]">
-              —
+            <div className="col-span-full flex h-32 items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--muted-foreground)]">
+              {t('searchTable.empty')}
             </div>
           ) : (
             data.map((record, idx) => (
@@ -362,10 +386,10 @@ export function EasySearchTable<T extends Record<string, unknown>>({
 
     if (view === 'list') {
       return (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {data.length === 0 ? (
-            <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--muted-foreground)]">
-              —
+            <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--muted-foreground)]">
+              {t('searchTable.empty')}
             </div>
           ) : (
             data.map((record, idx) => (
@@ -380,18 +404,21 @@ export function EasySearchTable<T extends Record<string, unknown>>({
 
     return (
       <div className="overflow-x-auto rounded-md border border-[var(--border)]">
-      <Table className="min-w-[720px] table-fixed">
+      <Table className="w-full table-auto">
         <TableHeader>
           <TableRow>
-            {visibleColumns.map((col) => (
-              <TableHead
-                key={col.key}
-                className="whitespace-nowrap"
-                style={col.width ? { width: col.width } : undefined}
-              >
-                {t(col.headerKey)}
-              </TableHead>
-            ))}
+            {visibleColumns.map((col) => {
+              const sticky = stickyStyles.get(col.key)
+              return (
+                <TableHead
+                  key={col.key}
+                  className={cn('whitespace-nowrap', sticky && 'bg-[var(--card)]')}
+                  style={{ ...sticky, ...(col.width ? { width: col.width } : undefined) }}
+                >
+                  {t(col.headerKey)}
+                </TableHead>
+              )
+            })}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -407,13 +434,20 @@ export function EasySearchTable<T extends Record<string, unknown>>({
           ) : (
             data.map((record, idx) => (
               <TableRow key={(record['id'] as string) ?? idx}>
-                {visibleColumns.map((col) => (
-                  <TableCell key={col.key} className="whitespace-nowrap">
-                    <div className="truncate" title={String(record[col.key] ?? '')}>
-                      {renderCell(record, col)}
-                    </div>
-                  </TableCell>
-                ))}
+                {visibleColumns.map((col) => {
+                  const sticky = stickyStyles.get(col.key)
+                  return (
+                    <TableCell
+                      key={col.key}
+                      className={cn('whitespace-nowrap', sticky && 'bg-[var(--card)]')}
+                      style={sticky}
+                    >
+                      <div className="truncate" title={String(record[col.key] ?? '')}>
+                        {renderCell(record, col)}
+                      </div>
+                    </TableCell>
+                  )
+                })}
               </TableRow>
             ))
           )}
@@ -424,8 +458,8 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   }
 
   return (
-    <Card>
-      <CardContent className="space-y-4 p-5">
+    <Card className="min-w-0 overflow-hidden">
+      <CardContent className="min-w-0 space-y-4 p-5">
         <EasySearchForm
           fields={searchFields}
           onSearch={handleSearch}

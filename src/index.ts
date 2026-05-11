@@ -12,6 +12,8 @@ export * from "./components/EasyPasswordInput";
 export * from "./components/EasySearchTable";
 export * from "./components/EasyTabContainer";
 export * from "./components/EasyTreeSelectPanel";
+export * from "./components/EasyGlobalPhoneInput";
+export * from "./components/EasyGlobalPhoneText";
 export {
   Accordion,
   AccordionItem,

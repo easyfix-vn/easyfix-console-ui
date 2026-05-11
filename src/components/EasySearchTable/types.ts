@@ -4,11 +4,14 @@ import type { ReactNode } from 'react'
 export type SearchFieldDef = {
   key: string
   labelKey: string
-  type: 'input' | 'select' | 'dateRange'
   placeholder?: string
-  options?: Array<{ label: string; value: string }>
-  showTime?: boolean
-}
+  colSpan?: number
+} & (
+  | { type: 'input' }
+  | { type: 'select'; options?: Array<{ label: string; value: string }> }
+  | { type: 'dateRange'; showTime?: boolean }
+  | { type: 'custom'; render: (value: unknown, onChange: (value: unknown) => void) => ReactNode }
+)
 
 // 列配置同时服务表格、默认卡片和默认列表视图。
 export type ColumnDef<T> = {
@@ -19,6 +22,7 @@ export type ColumnDef<T> = {
   exportValue?: (value: unknown, record: T) => string | number | null | undefined
   sortable?: boolean
   width?: string | number
+  fixed?: 'left' | 'right'
   defaultVisible?: boolean
   hidden?: boolean
 }

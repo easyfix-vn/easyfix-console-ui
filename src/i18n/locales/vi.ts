@@ -14,6 +14,7 @@ export const vi = {
   },
   searchTable: {
     columnConfig: "Cấu hình cột",
+    empty: "Không có dữ liệu",
     pageInfo: "Trang {{page}} / {{totalPages}}",
     total: "Tổng {{total}}",
     views: {
@@ -36,5 +37,11 @@ export const vi = {
     startTime: "Giờ bắt đầu",
     endTime: "Giờ kết thúc",
     separator: "đến",
+  },
+  globalPhone: {
+    placeholder: "Nhập số điện thoại",
+    invalidLength: "Số điện thoại phải có {{length}} chữ số",
+    invalidFormat: "Số điện thoại không hợp lệ",
+    noLeadingZero: "Số điện thoại không được bắt đầu bằng 0",
   },
 } as const;

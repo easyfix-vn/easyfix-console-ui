@@ -14,6 +14,7 @@ export const zhCN = {
   },
   searchTable: {
     columnConfig: "列配置",
+    empty: "暂无数据",
     pageInfo: "第 {{page}} / {{totalPages}} 页",
     total: "共 {{total}} 条",
     views: {
@@ -36,5 +37,11 @@ export const zhCN = {
     startTime: "开始时间",
     endTime: "结束时间",
     separator: "至",
+  },
+  globalPhone: {
+    placeholder: "请输入手机号",
+    invalidLength: "手机号应为 {{length}} 位数字",
+    invalidFormat: "手机号格式不正确",
+    noLeadingZero: "手机号不能以 0 开头",
   },
 } as const;
