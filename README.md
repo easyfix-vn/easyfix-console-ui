@@ -3,7 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/@easyfix/console-ui.svg)](https://www.npmjs.com/package/@easyfix/console-ui)
 [![GitHub](https://img.shields.io/github/license/easyfix-vn/easyfix-console-ui)](https://github.com/easyfix-vn/easyfix-console-ui)
 
+
 Easyfix console shared React component library. Components use the `Easy` prefix and match the Easyfix micro frontend stack: React 18, TypeScript, Tailwind CSS 4 and Base UI.
+
+[文档](https://easyfix-vn.github.io/easyfix-console-ui-doc/#/)
 
 ## Install
 
@@ -23,6 +26,7 @@ pnpm build
 cd ../microfe-app-demo
 pnpm add ../easyfix_console_ui
 ```
+
 
 ## Usage
 
