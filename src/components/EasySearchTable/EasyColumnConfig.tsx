@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { Tooltip, TooltipTrigger, TooltipPopup } from '@/components/ui/tooltip'
 import type { ColumnDef } from './types'
 
 type EasyColumnConfigProps<T> = {
@@ -133,14 +134,17 @@ export function EasyColumnConfig<T>({
   }
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Settings2 className="mr-1 size-4" />
-          {t('searchTable.columnConfig')}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-64">
+    <Tooltip>
+      <Popover>
+        <TooltipTrigger render={<span className="inline-flex" />}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon" className="size-8">
+              <Settings2 className="size-4" />
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipPopup>{t('searchTable.columnConfig')}</TooltipPopup>
+        <PopoverContent align="end" className="w-64">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Button
@@ -184,5 +188,6 @@ export function EasyColumnConfig<T>({
         </div>
       </PopoverContent>
     </Popover>
+    </Tooltip>
   )
 }

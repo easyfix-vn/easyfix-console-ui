@@ -16,6 +16,9 @@ export const vi = {
     columnConfig: "Cấu hình cột",
     empty: "Không có dữ liệu",
     pageInfo: "Trang {{page}} / {{totalPages}}",
+    pageSize: "{{size}} / trang",
+    jumpTo: "Đến trang",
+    page: "",
     total: "Tổng {{total}}",
     views: {
       card: "Thẻ",

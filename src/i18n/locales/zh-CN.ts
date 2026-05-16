@@ -16,6 +16,9 @@ export const zhCN = {
     columnConfig: "列配置",
     empty: "暂无数据",
     pageInfo: "第 {{page}} / {{totalPages}} 页",
+    pageSize: "{{size}} 条/页",
+    jumpTo: "跳至",
+    page: "页",
     total: "共 {{total}} 条",
     views: {
       card: "卡片",

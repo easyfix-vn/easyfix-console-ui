@@ -16,6 +16,9 @@ export const enUS = {
     columnConfig: "Columns",
     empty: "No data",
     pageInfo: "Page {{page}} / {{totalPages}}",
+    pageSize: "{{size}} / page",
+    jumpTo: "Go to",
+    page: "",
     total: "Total {{total}}",
     views: {
       card: "Card",

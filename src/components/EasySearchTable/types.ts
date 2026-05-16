@@ -30,6 +30,9 @@ export type ColumnDef<T> = {
 // 内置三种数据展示视图，业务可通过 renderCard/renderListItem 覆盖模板。
 export type SearchTableView = 'table' | 'card' | 'list'
 
+export type SortOrder = 'asc' | 'desc' | null
+export type SortState = { key: string; order: SortOrder }
+
 export type SearchParams = {
   page: number
   pageSize: number
