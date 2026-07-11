@@ -2,7 +2,7 @@
 
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { cva, type VariantProps } from "class-variance-authority";
-import type React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export const toggleVariants = cva(
@@ -27,20 +27,18 @@ export const toggleVariants = cva(
   },
 );
 
-export function Toggle({
-  className,
-  variant,
-  size,
-  ...props
-}: TogglePrimitive.Props &
-  VariantProps<typeof toggleVariants>): React.ReactElement {
+export const Toggle = React.forwardRef<
+  HTMLButtonElement,
+  TogglePrimitive.Props & VariantProps<typeof toggleVariants>
+>(function Toggle({ className, variant, size, ...props }, ref) {
   return (
     <TogglePrimitive
+      ref={ref}
       className={cn(toggleVariants({ className, size, variant }))}
       data-slot="toggle"
       {...props}
     />
   );
-}
+});
 
 export { TogglePrimitive };

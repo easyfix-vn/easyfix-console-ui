@@ -55,4 +55,30 @@ describe("Calendar", () => {
     );
     expect(screen.getByText(/January/i)).toBeInTheDocument();
   });
+
+  it("跨月导航时保持完整六周并同步月份标题", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <EasyI18nProvider locale="zh-CN">
+        <Calendar
+          defaultMonth={new Date("2026-07-01T07:00:00.000Z")}
+          timeZone="America/Los_Angeles"
+        />
+      </EasyI18nProvider>,
+    );
+
+    const nextButton = screen.getByRole("button", {
+      name: "Go to the Next Month",
+    });
+
+    for (const caption of ["2026年7月", "2026年8月", "2026年9月"]) {
+      expect(screen.getByRole("status")).toHaveTextContent(caption);
+      expect(screen.getAllByRole("gridcell")).toHaveLength(42);
+
+      if (caption !== "2026年9月") {
+        await user.click(nextButton);
+      }
+    }
+  });
 });

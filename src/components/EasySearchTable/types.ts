@@ -8,6 +8,7 @@ export type SearchFieldDef = {
   labelKey: string
   placeholder?: string
   colSpan?: number
+  defaultValue?: unknown
 } & (
   | { type: 'input' }
   | { type: 'select'; options?: Array<{ label: string; value: string }> }

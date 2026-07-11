@@ -45,20 +45,27 @@ function TimeInput({ label, value, onChange, disabled, className }: TimeInputPro
   return (
     <label
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-2.5 py-1 text-sm text-foreground shadow-xs/5 ring-ring/24 transition-shadow focus-within:border-ring focus-within:ring-[3px]",
+        "inline-flex h-8 items-center gap-1.5 rounded-lg border border-input bg-background px-2.5 py-0 text-sm text-foreground shadow-xs/5 ring-ring/24 transition-shadow focus-within:border-ring focus-within:ring-[3px] sm:h-7",
         disabled && "opacity-64",
         className,
       )}
     >
-      <ClockIcon aria-hidden="true" className="size-4 text-muted-foreground" />
-      {label && <span className="text-xs text-muted-foreground">{label}</span>}
+      <ClockIcon
+        aria-hidden="true"
+        className="size-4 shrink-0 text-muted-foreground"
+      />
+      {label && (
+        <span className="whitespace-nowrap text-xs text-muted-foreground">
+          {label}
+        </span>
+      )}
       <input
         type="time"
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "min-w-[5.5rem] bg-transparent text-foreground tabular-nums outline-none placeholder:text-muted-foreground accent-primary",
+          "h-full min-w-0 flex-1 bg-transparent text-foreground tabular-nums outline-none placeholder:text-muted-foreground accent-primary",
           "[&::-webkit-calendar-picker-indicator]:hidden",
           "[color-scheme:light] dark:[color-scheme:dark]",
         )}
@@ -105,6 +112,7 @@ export function DateTimePicker({
 }: DateTimePickerProps): React.ReactElement {
   const { timeZone: configTimeZone } = useConfig();
   const [open, setOpen] = React.useState(false);
+  const [pendingDate, setPendingDate] = React.useState<Date | undefined>(value);
   const [internalTimeZone, setInternalTimeZone] = React.useState(() =>
     normalizeDateTimeZone(defaultTimeZone ?? configTimeZone),
   );
@@ -123,6 +131,12 @@ export function DateTimePicker({
     () => toZonedCalendarDate(value, resolvedTimeZone),
     [value, resolvedTimeZone],
   );
+  const activeDate = open ? pendingDate : value;
+  const activeCalendarValue = React.useMemo(
+    () => toZonedCalendarDate(activeDate, resolvedTimeZone),
+    [activeDate, resolvedTimeZone],
+  );
+  const calendarToday = toZonedCalendarDate(new Date(), resolvedTimeZone);
   const formatter = React.useMemo(
     () => resolveFormatter(format, DEFAULT_DATETIME_TEMPLATES[locale]),
     [format, locale],
@@ -137,18 +151,27 @@ export function DateTimePicker({
   );
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (!date) return emitValue(undefined);
-    const next = new Date(date);
-    if (calendarValue) {
-      next.setHours(calendarValue.getHours(), calendarValue.getMinutes());
+    if (!date) {
+      setPendingDate(undefined);
+      return;
     }
-    emitValue(calendarDateToZonedDate(next, resolvedTimeZone, "dateTime"));
+
+    const next = applyCalendarTime(
+      date,
+      activeCalendarValue
+        ? toCalendarTimeString(activeCalendarValue)
+        : "00:00",
+    );
+    setPendingDate(calendarDateToZonedDate(next, resolvedTimeZone, "dateTime"));
   };
 
   const handleTimeZoneChange = React.useCallback(
     (nextTimeZone: string) => {
       const normalized = normalizeDateTimeZone(nextTimeZone);
-      const currentCalendarValue = toZonedCalendarDate(value, resolvedTimeZone);
+      const currentCalendarValue = toZonedCalendarDate(
+        open ? pendingDate : value,
+        resolvedTimeZone,
+      );
 
       if (timeZone === undefined) {
         setInternalTimeZone(normalized);
@@ -156,16 +179,32 @@ export function DateTimePicker({
       onTimeZoneChange?.(normalized);
 
       if (currentCalendarValue) {
-        emitValue(
+        setPendingDate(
           calendarDateToZonedDate(currentCalendarValue, normalized, "dateTime"),
         );
       }
     },
-    [emitValue, onTimeZoneChange, resolvedTimeZone, timeZone, value],
+    [onTimeZoneChange, open, pendingDate, resolvedTimeZone, timeZone, value],
   );
 
+  const handleOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      if (nextOpen) {
+        setPendingDate(value);
+      }
+      setOpen(nextOpen);
+    },
+    [value],
+  );
+
+  const commitPendingDate = React.useCallback(() => {
+    if (!pendingDate) return;
+    emitValue(pendingDate);
+    setOpen(false);
+  }, [emitValue, pendingDate]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger
         disabled={disabled}
         render={
@@ -203,21 +242,23 @@ export function DateTimePicker({
           </div>
         )}
         <Calendar
+          defaultMonth={activeCalendarValue ?? calendarToday}
           mode="single"
-          selected={calendarValue}
+          selected={activeCalendarValue}
+          today={calendarToday}
           onSelect={handleDateSelect}
         />
-        <div className="flex items-center justify-end gap-2 border-t border-border ps-0 pe-3 pb-2 pt-2">
+        <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
           <TimeInput
-            className="ps-0"
+            className="min-w-0 flex-1"
             label={t("datePicker.startTime")}
-            value={toCalendarTimeString(calendarValue)}
+            value={toCalendarTimeString(activeCalendarValue)}
             onChange={(nextTime) => {
               const base =
-                calendarValue ??
+                activeCalendarValue ??
                 toZonedCalendarDate(new Date(), resolvedTimeZone) ??
                 new Date();
-              emitValue(
+              setPendingDate(
                 calendarDateToZonedDate(
                   applyCalendarTime(base, nextTime),
                   resolvedTimeZone,
@@ -225,8 +266,17 @@ export function DateTimePicker({
                 ),
               );
             }}
-            disabled={disabled || !calendarValue}
+            disabled={disabled || !activeCalendarValue}
           />
+          <Button
+            className="h-8 sm:h-7"
+            disabled={disabled || !pendingDate}
+            onClick={commitPendingDate}
+            size="sm"
+            type="button"
+          >
+            {t("actions.confirm")}
+          </Button>
         </div>
       </PopoverPopup>
     </Popover>

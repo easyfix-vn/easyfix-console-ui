@@ -26,10 +26,14 @@ const buttonClassNames =
 export function Calendar({
   className,
   classNames,
+  fixedWeeks = true,
   showOutsideDays = true,
   components: userComponents,
+  formatters: userFormatters,
   mode = "single",
   locale: localeProp,
+  noonSafe,
+  timeZone,
   ...props
 }: React.ComponentProps<typeof DayPicker>): React.ReactElement {
   const { locale: easyLocale } = useEasyI18n();
@@ -127,6 +131,9 @@ export function Calendar({
     ...defaultComponents,
     ...userComponents,
   };
+  const localeCode = resolvedLocale.code ?? easyLocale;
+  const safeFormatterDate = (date: Date): Date =>
+    new Date(date.getFullYear(), date.getMonth(), 15, 12);
 
   const dayPickerProps = {
     className: cn(
@@ -136,13 +143,24 @@ export function Calendar({
     classNames: mergedClassNames,
     components: mergedComponents,
     "data-slot": "calendar",
+    fixedWeeks,
     formatters: {
+      formatCaption: (date: Date) =>
+        new Intl.DateTimeFormat(localeCode, {
+          month: "long",
+          year: "numeric",
+        }).format(safeFormatterDate(date)),
       formatMonthDropdown: (date: Date) =>
-        date.toLocaleString("default", { month: "short" }),
+        new Intl.DateTimeFormat(localeCode, { month: "short" }).format(
+          safeFormatterDate(date),
+        ),
+      ...userFormatters,
     } as React.ComponentProps<typeof DayPicker>["formatters"],
     locale: resolvedLocale,
     mode,
+    noonSafe: noonSafe ?? Boolean(timeZone),
     showOutsideDays,
+    timeZone,
     ...props,
   };
 

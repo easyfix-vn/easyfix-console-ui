@@ -45,25 +45,40 @@ type TimeInputProps = {
   value: string;
   onChange: (val: string) => void;
   disabled?: boolean;
+  className?: string;
 };
 
-function TimeInput({ label, value, onChange, disabled }: TimeInputProps) {
+function TimeInput({
+  label,
+  value,
+  onChange,
+  disabled,
+  className,
+}: TimeInputProps) {
   return (
     <label
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-2.5 py-1 text-sm text-foreground shadow-xs/5 ring-ring/24 transition-shadow focus-within:border-ring focus-within:ring-[3px]",
+        "inline-flex h-8 items-center gap-1.5 rounded-lg border border-input bg-background px-2.5 py-0 text-sm text-foreground shadow-xs/5 ring-ring/24 transition-shadow focus-within:border-ring focus-within:ring-[3px] sm:h-7",
         disabled && "opacity-64",
+        className,
       )}
     >
-      <ClockIcon aria-hidden="true" className="size-4 text-muted-foreground" />
-      {label && <span className="text-xs text-muted-foreground">{label}</span>}
+      <ClockIcon
+        aria-hidden="true"
+        className="size-4 shrink-0 text-muted-foreground"
+      />
+      {label && (
+        <span className="whitespace-nowrap text-xs text-muted-foreground">
+          {label}
+        </span>
+      )}
       <input
         type="time"
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "min-w-[5.5rem] bg-transparent text-foreground tabular-nums outline-none placeholder:text-muted-foreground accent-primary",
+          "h-full w-16 min-w-0 bg-transparent text-foreground tabular-nums outline-none placeholder:text-muted-foreground accent-primary",
           "[&::-webkit-calendar-picker-indicator]:hidden",
           "[color-scheme:light] dark:[color-scheme:dark]",
         )}
@@ -187,6 +202,7 @@ export function DateRangePicker({
   const dayPickerValue: DateRange | undefined = activeCalendarValue?.from
     ? { from: activeCalendarValue.from, to: activeCalendarValue.to }
     : undefined;
+  const calendarToday = toZonedCalendarDate(new Date(), resolvedTimeZone);
 
   React.useEffect(() => {
     if (!open) {
@@ -251,7 +267,7 @@ export function DateRangePicker({
       return calendarDateToZonedDate(target, resolvedTimeZone, "endOfDay");
     };
 
-    const isComplete = !!range.to && range.from.getTime() !== range.to.getTime();
+    const isComplete = !!range.to;
 
     if (!isComplete) {
       setPendingRange({
@@ -354,7 +370,7 @@ export function DateRangePicker({
       </PopoverTrigger>
       <PopoverPopup
         align="start"
-        className="w-auto p-0"
+        className="w-auto max-w-[calc(100vw-1rem)] p-0"
         viewportClassName="!p-0 [--viewport-inline-padding:0px]"
       >
         {showTimeZone && (
@@ -382,68 +398,84 @@ export function DateRangePicker({
               ))}
             </div>
           )}
-          <div>
+          <div className="min-w-0 overflow-hidden">
             <Calendar
+              classNames={{
+                month: "min-w-0",
+                months: "!flex-row gap-3",
+                weekday: "text-[11px]",
+              }}
+              defaultMonth={activeCalendarValue?.from ?? calendarToday}
               mode="range"
               numberOfMonths={numberOfMonths}
               selected={dayPickerValue}
+              style={{ "--cell-size": "1.875rem" } as React.CSSProperties}
+              today={calendarToday}
               onSelect={handleRangeSelect}
             />
-            <div className="border-t border-border px-3 pb-4 pt-3">
-              {isDatetime && (
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <TimeInput
-                    label={t("datePicker.startTime")}
-                    value={toCalendarTimeString(activeCalendarValue?.from)}
-                    disabled={disabled || !activeCalendarValue?.from}
-                    onChange={(nextTime) =>
-                      setPendingRange({
-                        from: activeCalendarValue?.from
-                          ? calendarDateToZonedDate(
-                              applyCalendarTime(
-                                activeCalendarValue.from,
-                                nextTime,
-                              ),
-                              resolvedTimeZone,
-                              "dateTime",
-                            )
-                          : undefined,
-                        to: pendingRange?.to,
-                      })
-                    }
-                  />
-                  <span className="text-xs text-muted-foreground">{sep}</span>
-                  <TimeInput
-                    label={t("datePicker.endTime")}
-                    value={toCalendarTimeString(activeCalendarValue?.to)}
-                    disabled={disabled || !activeCalendarValue?.to}
-                    onChange={(nextTime) =>
-                      setPendingRange({
-                        from: pendingRange?.from,
-                        to: activeCalendarValue?.to
-                          ? calendarDateToZonedDate(
-                              applyCalendarTime(activeCalendarValue.to, nextTime),
-                              resolvedTimeZone,
-                              "dateTime",
-                            )
-                          : undefined,
-                      })
-                    }
-                  />
-                </div>
-              )}
-              <div className="flex items-center justify-end">
-                <Button
-                  disabled={disabled || !pendingRange?.from || !pendingRange?.to}
-                  onClick={commitPendingRange}
-                  size="sm"
-                  type="button"
-                >
-                  {t("actions.confirm")}
-                </Button>
-              </div>
-            </div>
           </div>
+        </div>
+        <div
+          className={cn(
+            "flex items-center gap-2 border-t border-border px-3 py-2",
+            !isDatetime && "justify-end",
+          )}
+        >
+          {isDatetime && (
+            <>
+              <TimeInput
+                className="min-w-0 flex-1"
+                label={t("datePicker.startTime")}
+                value={toCalendarTimeString(activeCalendarValue?.from)}
+                disabled={disabled || !activeCalendarValue?.from}
+                onChange={(nextTime) =>
+                  setPendingRange({
+                    from: activeCalendarValue?.from
+                      ? calendarDateToZonedDate(
+                          applyCalendarTime(
+                            activeCalendarValue.from,
+                            nextTime,
+                          ),
+                          resolvedTimeZone,
+                          "dateTime",
+                        )
+                      : undefined,
+                    to: pendingRange?.to,
+                  })
+                }
+              />
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {sep}
+              </span>
+              <TimeInput
+                className="min-w-0 flex-1"
+                label={t("datePicker.endTime")}
+                value={toCalendarTimeString(activeCalendarValue?.to)}
+                disabled={disabled || !activeCalendarValue?.to}
+                onChange={(nextTime) =>
+                  setPendingRange({
+                    from: pendingRange?.from,
+                    to: activeCalendarValue?.to
+                      ? calendarDateToZonedDate(
+                          applyCalendarTime(activeCalendarValue.to, nextTime),
+                          resolvedTimeZone,
+                          "dateTime",
+                        )
+                      : undefined,
+                  })
+                }
+              />
+            </>
+          )}
+          <Button
+            className={cn("h-8 sm:h-7", isDatetime && "ms-auto")}
+            disabled={disabled || !pendingRange?.from || !pendingRange?.to}
+            onClick={commitPendingRange}
+            size="sm"
+            type="button"
+          >
+            {t("actions.confirm")}
+          </Button>
         </div>
       </PopoverPopup>
     </Popover>

@@ -1,8 +1,9 @@
-import { useEffect, useState, useMemo, type CSSProperties } from 'react'
+import { useEffect, useState, useMemo, useRef, type CSSProperties } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Download, LayoutGrid, List, Table2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Download, Ghost, LayoutGrid, List, Table2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEasyT } from '@/i18n'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -32,9 +33,17 @@ import {
 } from '@/components/ui/select'
 import { Tooltip, TooltipTrigger, TooltipPopup } from '@/components/ui/tooltip'
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty'
+import {
   EasySearchForm,
   EasySearchFormActions,
-  EASY_SEARCH_FORM_COLLAPSED_FIELDS,
+  EASY_SEARCH_FORM_DEFAULT_COLLAPSE_THRESHOLD,
+  getSearchFieldDefaultValues,
 } from './EasySearchForm'
 import { EasyColumnConfig } from './EasyColumnConfig'
 import type { ColumnDef, SearchFieldDef, SearchMode, SearchParams, SearchTableView, SortState } from './types'
@@ -49,6 +58,12 @@ export type EasySearchTableExportContext<T> = {
   exportParams: Record<string, unknown>
   close: () => void
   exportCurrentData: () => void
+}
+
+export type EasySearchTableEmptyContext = {
+  view: SearchTableView
+  searchValues: Record<string, unknown>
+  reset: () => void
 }
 
 export type EasySearchTableProps<T> = {
@@ -68,6 +83,7 @@ export type EasySearchTableProps<T> = {
   showExport?: boolean
   exportFileName?: string
   renderExportContent?: (context: EasySearchTableExportContext<T>) => ReactNode
+  renderEmptyContent?: (context: EasySearchTableEmptyContext) => ReactNode
   renderCard?: (record: T, columns: ColumnDef<T>[]) => ReactNode
   renderListItem?: (record: T, columns: ColumnDef<T>[]) => ReactNode
   pageSizeOptions?: number[]
@@ -75,6 +91,8 @@ export type EasySearchTableProps<T> = {
   showPageJumper?: boolean
   defaultSort?: SortState
   onSort?: (sort: SortState) => void
+  searchCollapseThreshold?: number
+  searchThrottleMs?: number
 }
 
 const viewIcons: Record<SearchTableView, typeof Table2> = {
@@ -91,6 +109,44 @@ function getDefaultVisibleKeys<T>(columns: ColumnDef<T>[]) {
   return columns
     .filter((column) => !column.hidden && column.defaultVisible !== false)
     .map((column) => column.key)
+}
+
+function areSearchValuesEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true
+
+  if (left instanceof Date && right instanceof Date) {
+    return left.getTime() === right.getTime()
+  }
+
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return left.length === right.length &&
+      left.every((value, index) => areSearchValuesEqual(value, right[index]))
+  }
+
+  if (
+    left !== null &&
+    right !== null &&
+    typeof left === 'object' &&
+    typeof right === 'object'
+  ) {
+    const leftRecord = left as Record<string, unknown>
+    const rightRecord = right as Record<string, unknown>
+    const leftKeys = Object.keys(leftRecord).filter(
+      (key) => leftRecord[key] !== undefined,
+    )
+    const rightKeys = Object.keys(rightRecord).filter(
+      (key) => rightRecord[key] !== undefined,
+    )
+
+    return leftKeys.length === rightKeys.length &&
+      leftKeys.every(
+        (key) =>
+          Object.prototype.hasOwnProperty.call(rightRecord, key) &&
+          areSearchValuesEqual(leftRecord[key], rightRecord[key]),
+      )
+  }
+
+  return false
 }
 
 export function EasySearchTable<T extends Record<string, unknown>>({
@@ -110,6 +166,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   showExport = true,
   exportFileName = 'table-data.csv',
   renderExportContent,
+  renderEmptyContent,
   renderCard,
   renderListItem,
   pageSizeOptions = [10, 20, 50, 100],
@@ -117,6 +174,8 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   showPageJumper = true,
   defaultSort,
   onSort,
+  searchCollapseThreshold = EASY_SEARCH_FORM_DEFAULT_COLLAPSE_THRESHOLD,
+  searchThrottleMs = 300,
 }: EasySearchTableProps<T>) {
   const t = useEasyT()
   const [columnOrder, setColumnOrder] = useState(() => getColumnOrder(columns))
@@ -132,12 +191,31 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   const [view, setView] = useState<SearchTableView>(() =>
     availableViews.includes(defaultView) ? defaultView : availableViews[0],
   )
-  const [searchValues, setSearchValues] = useState<Record<string, unknown>>({})
+  const defaultSearchValues = useMemo(
+    () => getSearchFieldDefaultValues(searchFields),
+    [searchFields],
+  )
+  const [searchValues, setSearchValues] = useState<Record<string, unknown>>(
+    () => getSearchFieldDefaultValues(searchFields),
+  )
   const [searchCollapsed, setSearchCollapsed] = useState(true)
   const [exportOpen, setExportOpen] = useState(false)
   const [sortState, setSortState] = useState<SortState | null>(defaultSort ?? null)
   const [jumpPage, setJumpPage] = useState('')
   const [internalPageSize, setInternalPageSize] = useState(pageSize)
+  const lastSubmittedSearchValuesRef = useRef<Record<string, unknown>>(
+    getSearchFieldDefaultValues(searchFields),
+  )
+  const pendingSearchValuesRef = useRef<Record<string, unknown> | null>(null)
+  const searchThrottleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastSearchRunAtRef = useRef(0)
+  const matchesThreeSearchColumns = useMediaQuery('(min-width: 1280px)')
+  const matchesTwoSearchColumns = useMediaQuery('(min-width: 768px)')
+  const searchColumnCount = matchesThreeSearchColumns
+    ? 3
+    : matchesTwoSearchColumns
+      ? 2
+      : 1
 
   useEffect(() => {
     const availableKeys = getColumnOrder(columns)
@@ -153,6 +231,15 @@ export function EasySearchTable<T extends Record<string, unknown>>({
       ],
     )
   }, [columns])
+
+  useEffect(
+    () => () => {
+      if (searchThrottleTimerRef.current) {
+        clearTimeout(searchThrottleTimerRef.current)
+      }
+    },
+    [],
+  )
 
   const orderedColumns = useMemo(() => {
     const columnMap = new Map(columns.map((column) => [column.key, column]))
@@ -195,14 +282,60 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   const totalPages = Math.max(1, Math.ceil(total / internalPageSize))
   const exportParams = useMemo(() => ({ ...searchValues }), [searchValues])
 
-  function handleSearch(values: Record<string, unknown>) {
-    setSearchValues(values)
+  function submitSearch(values: Record<string, unknown>) {
+    if (areSearchValuesEqual(lastSubmittedSearchValuesRef.current, values)) {
+      return
+    }
+
+    lastSubmittedSearchValuesRef.current = { ...values }
+    lastSearchRunAtRef.current = Date.now()
     onSearch({ page: 1, pageSize: internalPageSize, ...values })
   }
 
+  function scheduleSearch(values: Record<string, unknown>) {
+    const nextValues = { ...values }
+    const throttleMs = Math.max(0, searchThrottleMs)
+
+    pendingSearchValuesRef.current = nextValues
+
+    if (throttleMs === 0) {
+      if (searchThrottleTimerRef.current) {
+        clearTimeout(searchThrottleTimerRef.current)
+        searchThrottleTimerRef.current = null
+      }
+      pendingSearchValuesRef.current = null
+      submitSearch(nextValues)
+      return
+    }
+
+    const elapsed = Date.now() - lastSearchRunAtRef.current
+    if (!searchThrottleTimerRef.current && elapsed >= throttleMs) {
+      pendingSearchValuesRef.current = null
+      submitSearch(nextValues)
+      return
+    }
+
+    if (searchThrottleTimerRef.current) return
+
+    searchThrottleTimerRef.current = setTimeout(() => {
+      searchThrottleTimerRef.current = null
+      const pendingValues = pendingSearchValuesRef.current
+      pendingSearchValuesRef.current = null
+
+      if (pendingValues) {
+        submitSearch(pendingValues)
+      }
+    }, Math.max(0, throttleMs - elapsed))
+  }
+
+  function handleSearch(values: Record<string, unknown>) {
+    setSearchValues(values)
+    scheduleSearch(values)
+  }
+
   function handleReset() {
-    setSearchValues({})
-    onSearch({ page: 1, pageSize: internalPageSize })
+    setSearchValues(defaultSearchValues)
+    scheduleSearch(defaultSearchValues)
   }
 
   function handlePageChange(newPage: number) {
@@ -211,6 +344,12 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   }
 
   function handlePageSizeChange(newSize: number) {
+    if (searchThrottleTimerRef.current) {
+      clearTimeout(searchThrottleTimerRef.current)
+      searchThrottleTimerRef.current = null
+    }
+    pendingSearchValuesRef.current = null
+    lastSubmittedSearchValuesRef.current = { ...searchValues }
     setInternalPageSize(newSize)
     onSearch({ page: 1, pageSize: newSize, ...searchValues })
   }
@@ -292,7 +431,18 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     exportCurrentData,
   }
 
-  const canCollapseSearch = searchFields.length > EASY_SEARCH_FORM_COLLAPSED_FIELDS
+  const normalizedSearchCollapseThreshold = Math.max(1, searchCollapseThreshold)
+  const canCollapseSearch =
+    searchFields.length > normalizedSearchCollapseThreshold
+  const visibleSearchFieldCount =
+    searchCollapsed && canCollapseSearch
+      ? normalizedSearchCollapseThreshold
+      : searchFields.length
+  const searchActionsInToolbar =
+    visibleSearchFieldCount > 0 &&
+    visibleSearchFieldCount % searchColumnCount === 0
+  const inlineSearchActionsInLastColumn =
+    (visibleSearchFieldCount + 1) % searchColumnCount === 0
 
   function renderExportButton() {
     const button = (
@@ -442,6 +592,30 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     return <ArrowUpDown className="ml-1 inline size-3.5 opacity-40" />
   }
 
+  function renderEmptyState() {
+    return (
+      <div className="min-w-0" data-slot="easy-search-table-empty">
+        {renderEmptyContent ? (
+          renderEmptyContent({ view, searchValues, reset: handleReset })
+        ) : (
+          <Empty className="min-h-48 py-10 md:py-12">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Ghost />
+              </EmptyMedia>
+              <EmptyTitle className="text-base">
+                {t('searchTable.empty')}
+              </EmptyTitle>
+              <EmptyDescription>
+                {t('searchTable.emptyDescription')}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
+      </div>
+    )
+  }
+
   function renderContent() {
     if (loading) return renderSkeletonContent()
 
@@ -449,8 +623,8 @@ export function EasySearchTable<T extends Record<string, unknown>>({
       return (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {sortedData.length === 0 ? (
-            <div className="col-span-full flex h-32 items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--muted-foreground)]">
-              {t('searchTable.empty')}
+            <div className="col-span-full">
+              {renderEmptyState()}
             </div>
           ) : (
             sortedData.map((record, idx) => (
@@ -467,9 +641,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
       return (
         <div className="space-y-2">
           {sortedData.length === 0 ? (
-            <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--muted-foreground)]">
-              {t('searchTable.empty')}
-            </div>
+            renderEmptyState()
           ) : (
             sortedData.map((record, idx) => (
               <div key={(record['id'] as string) ?? idx}>
@@ -506,10 +678,10 @@ export function EasySearchTable<T extends Record<string, unknown>>({
             {sortedData.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={visibleColumns.length}
-                  className="h-24 text-center text-[var(--muted-foreground)]"
+                  colSpan={Math.max(visibleColumns.length, 1)}
+                  className="p-0"
                 >
-                  —
+                  {renderEmptyState()}
                 </TableCell>
               </TableRow>
             ) : (
@@ -549,20 +721,25 @@ export function EasySearchTable<T extends Record<string, unknown>>({
         onValuesChange={setSearchValues}
         collapsed={searchCollapsed}
         onToggle={handleToggleSearchCollapsed}
-        hideActionsOnMobile
+        collapseThreshold={normalizedSearchCollapseThreshold}
+        showActions={!searchActionsInToolbar}
+        actionsClassName={
+          inlineSearchActionsInLastColumn ? undefined : 'justify-start'
+        }
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           {toolbarActions}
-          <EasySearchFormActions
-            onSearch={handleToolbarSearch}
-            onReset={handleReset}
-            canCollapse={canCollapseSearch}
-            collapsed={searchCollapsed}
-            onToggle={handleToggleSearchCollapsed}
-            className="md:hidden"
-          />
+          {searchActionsInToolbar && (
+            <EasySearchFormActions
+              onSearch={handleToolbarSearch}
+              onReset={handleReset}
+              canCollapse={canCollapseSearch}
+              collapsed={searchCollapsed}
+              onToggle={handleToggleSearchCollapsed}
+            />
+          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">

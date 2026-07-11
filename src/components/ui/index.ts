@@ -33,6 +33,7 @@ export { Input, type InputProps, InputPrimitive } from "./input";
 export { Kbd, KbdGroup } from "./kbd";
 export { Label } from "./label";
 export { Meter, MeterLabel, MeterTrack, MeterIndicator, MeterValue, MeterPrimitive } from "./meter";
+export { MenuCreateHandle, Menu, MenuPortal, MenuTrigger, MenuPopup, MenuGroup, MenuItem, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuGroupLabel, MenuSeparator, MenuShortcut, MenuSub, MenuSubTrigger, MenuSubPopup, MenuPrimitive } from "./menu";
 export { NumberFieldContext, NumberField, NumberFieldGroup, NumberFieldDecrement, NumberFieldIncrement, NumberFieldInput, NumberFieldScrubArea, CursorGrowIcon, NumberFieldPrimitive } from "./number-field";
 export { OTPField, OTPFieldInput, OTPFieldSeparator, OTPFieldPrimitive } from "./otp-field";
 export { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext, PaginationEllipsis, type PaginationLinkProps } from "./pagination";

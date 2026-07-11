@@ -8,8 +8,11 @@ import type * as React from "react";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+/** IANA time zone identifier, for example `Asia/Shanghai` or `UTC`. */
+export type IanaTimeZone = string;
+
 export type TimeZoneOption = {
-  value: string;
+  value: IanaTimeZone;
   label?: string;
   description?: string;
   offset?: string;
@@ -17,7 +20,7 @@ export type TimeZoneOption = {
 };
 
 export type TimeZoneDefinition = {
-  value: string;
+  value: IanaTimeZone;
   offset: string;
   nameKey: string;
 };
@@ -28,7 +31,7 @@ export type TimestampRangeValue = {
 };
 
 export type DateRangeShortcutContext = {
-  timeZone: string;
+  timeZone: IanaTimeZone;
   now: dayjs.Dayjs;
 };
 
@@ -136,7 +139,11 @@ export function getTimeZoneOptions(
     if (sameOffsetIndex >= 0) {
       return baseOptions.map((option, index) =>
         index === sameOffsetIndex
-          ? { ...option, value: currentTimeZone, description: currentTimeZone }
+          ? {
+              value: currentTimeZone,
+              offset: currentOffset,
+              description: currentTimeZone,
+            }
           : option,
       );
     }
@@ -300,9 +307,15 @@ export function getZonedTimestamp(
 
 export function applyCalendarTime(base: Date, hhmm: string): Date {
   const [hours, minutes] = hhmm.split(":").map(Number);
-  const next = new Date(base);
-  next.setHours(hours || 0, minutes || 0, 0, 0);
-  return next;
+  return new Date(
+    base.getFullYear(),
+    base.getMonth(),
+    base.getDate(),
+    hours || 0,
+    minutes || 0,
+    0,
+    0,
+  );
 }
 
 export function toCalendarTimeString(date: Date | undefined): string {

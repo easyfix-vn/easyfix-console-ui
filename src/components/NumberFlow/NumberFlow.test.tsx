@@ -38,4 +38,18 @@ describe("NumberFlow", () => {
       "number-flow",
     );
   });
+
+  it("reserves the final formatted width before the mount animation", () => {
+    render(
+      <NumberFlow
+        value={1280.5}
+        locales="en-US"
+        format={{ style: "currency", currency: "USD" }}
+      />,
+    );
+
+    expect(screen.getByLabelText("$1,280.50")).toHaveStyle({
+      minInlineSize: "9ch",
+    });
+  });
 });

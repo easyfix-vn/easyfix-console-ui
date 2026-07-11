@@ -10,6 +10,7 @@ import {
   getTimeZoneOptions,
   getTimeZoneOptionTag,
   normalizeDateTimeZone,
+  type IanaTimeZone,
   type TimeZoneOption,
 } from "@/lib/date-time-zone";
 import {
@@ -21,9 +22,9 @@ import {
 } from "@/components/ui/select";
 
 export type TimezoneSelectProps = {
-  value?: string;
-  defaultValue?: string;
-  onValueChange?: (value: string) => void;
+  value?: IanaTimeZone;
+  defaultValue?: IanaTimeZone;
+  onValueChange?: (value: IanaTimeZone) => void;
   options?: TimeZoneOption[];
   disabled?: boolean;
   label?: React.ReactNode;
@@ -36,7 +37,7 @@ export function TimeZoneTag({
   timeZone,
   className,
 }: {
-  timeZone: string;
+  timeZone: IanaTimeZone;
   className?: string;
 }): React.ReactElement {
   return (
@@ -90,19 +91,11 @@ export function TimezoneSelect({
     () => normalizeDateTimeZone(getSystemTimeZone()),
     [],
   );
-  const browserOptionValue = React.useMemo(() => {
-    const exactMatch = resolvedOptions.find(
-      (option) => option.value === browserTimeZone,
-    );
-    if (exactMatch) {
-      return exactMatch.value;
-    }
-
-    const browserOffset = getDateTimeZoneTag(browserTimeZone);
-    return resolvedOptions.find(
-      (option) => getTimeZoneOptionTag(option) === browserOffset,
-    )?.value;
-  }, [browserTimeZone, resolvedOptions]);
+  const browserOptionValue = resolvedOptions.some(
+    (option) => option.value === browserTimeZone,
+  )
+    ? browserTimeZone
+    : undefined;
   const selectedOption = resolvedOptions.find(
     (option) => option.value === resolvedValue,
   );
@@ -173,15 +166,15 @@ export function TimezoneSelect({
                 label={itemLabel}
                 value={option.value}
               >
-                <span className="flex w-full min-w-0 items-center gap-3 whitespace-nowrap">
-                  <span className="w-20 shrink-0 font-mono">
+                <span className="grid w-full min-w-0 grid-cols-[6rem_minmax(0,1fr)_auto] items-center gap-x-4 whitespace-nowrap">
+                  <span className="font-mono">
                     {optionTag}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                  <span className="min-w-0 truncate text-muted-foreground">
                     {optionName}
                   </span>
                   {isBrowserTimeZone && (
-                    <span className="ms-auto shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                       {currentTimeZoneLabel}
                     </span>
                   )}

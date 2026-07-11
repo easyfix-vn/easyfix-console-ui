@@ -7,6 +7,7 @@ import {
   getDateTimeZoneTag,
   getTimeZoneOptions,
   getTimeZoneOptionTag,
+  isValidDateTimeZone,
   toZonedCalendarDate,
 } from "./date-time-zone";
 
@@ -25,6 +26,13 @@ describe("date-time-zone", () => {
     expect(getDateTimeZoneTag("Asia/Ho_Chi_Minh")).toBe("UTC+07");
     expect(getDateTimeZoneTag("Asia/Shanghai")).toBe("UTC+08");
     expect(getDateTimeZoneTag("Asia/Karachi")).toBe("UTC+05");
+  });
+
+  it("accepts IANA identifiers instead of display-only UTC offsets", () => {
+    expect(isValidDateTimeZone("Asia/Ho_Chi_Minh")).toBe(true);
+    expect(isValidDateTimeZone("Asia/Shanghai")).toBe(true);
+    expect(isValidDateTimeZone("UTC")).toBe(true);
+    expect(isValidDateTimeZone("UTC+08")).toBe(false);
   });
 
   it("formats half-hour and quarter-hour timezone offsets", () => {
@@ -94,10 +102,18 @@ describe("date-time-zone", () => {
 
   it("keeps the current browser zone without adding a duplicate offset row", () => {
     const options = getTimeZoneOptions(undefined, "America/New_York");
+    const currentOption = options.find(
+      (option) => option.value === "America/New_York",
+    );
 
     expect(options).toHaveLength(DEFAULT_TIME_ZONE_OPTIONS.length);
     expect(options.filter((option) => option.value === "America/New_York")).toHaveLength(1);
     expect(new Set(options.map((option) => option.value)).size).toBe(options.length);
+    expect(currentOption).toMatchObject({
+      description: "America/New_York",
+      value: "America/New_York",
+    });
+    expect(currentOption?.nameKey).toBeUndefined();
   });
 
   it("uses the last millisecond for date range end dates", () => {

@@ -4,6 +4,7 @@ import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer";
 import { XIcon } from "lucide-react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export type EasyDrawerPosition = "right" | "left" | "top" | "bottom";
 export type EasyDrawerWidth = "sm" | "md" | "lg" | "xl" | "full";
@@ -80,7 +81,7 @@ export function EasyDrawerBackdrop({
   return (
     <DrawerPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-50 h-dvh w-screen bg-black/40 backdrop-blur-[2px] transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       data-slot="easy-drawer-backdrop"
@@ -99,7 +100,7 @@ export function EasyDrawerViewport({
   return (
     <DrawerPrimitive.Viewport
       className={cn(
-        "fixed inset-0 z-50",
+        "fixed inset-0 z-50 h-dvh w-screen",
         (position === "right" || position === "left") && "flex items-stretch",
         position === "right" && "justify-end",
         position === "left" && "justify-start",
@@ -132,7 +133,7 @@ export function EasyDrawerPopup({
       <EasyDrawerViewport position={position}>
         <DrawerPrimitive.Popup
           className={cn(
-            "flex max-h-full min-h-0 flex-col bg-background text-foreground shadow-xl outline-none transition-transform duration-300 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0",
+            "relative flex max-h-full min-h-0 flex-col overflow-hidden bg-background text-foreground shadow-xl outline-none transition-transform duration-300 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0",
             (position === "right" || position === "left") &&
               cn(
                 "h-full w-[calc(100vw-3rem)]",
@@ -143,9 +144,9 @@ export function EasyDrawerPopup({
             position === "left" &&
               "border-e border-border data-ending-style:-translate-x-full data-starting-style:-translate-x-full",
             position === "bottom" &&
-              "max-h-[85vh] w-full rounded-t-xl border-t border-border data-ending-style:translate-y-full data-starting-style:translate-y-full",
+              "max-h-[85dvh] w-full rounded-t-xl border-t border-border data-ending-style:translate-y-full data-starting-style:translate-y-full",
             position === "top" &&
-              "max-h-[85vh] w-full rounded-b-xl border-b border-border data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
+              "max-h-[85dvh] w-full rounded-b-xl border-b border-border data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
             className,
           )}
           data-slot="easy-drawer-popup"
@@ -184,14 +185,25 @@ export function EasyDrawerHeader({
 
 export function EasyDrawerBody({
   className,
+  children,
+  scrollFade = true,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>): React.ReactElement {
+}: React.HTMLAttributes<HTMLDivElement> & {
+  scrollFade?: boolean;
+}): React.ReactElement {
   return (
-    <div
-      className={cn("min-h-0 flex-1 overflow-auto px-6 py-5 text-sm", className)}
-      data-slot="easy-drawer-body"
-      {...props}
-    />
+    <ScrollArea className="min-h-0 flex-1" scrollFade={scrollFade}>
+      <div
+        className={cn(
+          "px-6 pt-5 pb-8 text-sm",
+          className,
+        )}
+        data-slot="easy-drawer-body"
+        {...props}
+      >
+        {children}
+      </div>
+    </ScrollArea>
   );
 }
 
@@ -202,7 +214,7 @@ export function EasyDrawerFooter({
   return (
     <div
       className={cn(
-        "flex flex-col-reverse gap-2 border-t border-border px-6 py-3 sm:flex-row sm:items-center sm:justify-end",
+        "sticky inset-x-0 bottom-0 z-10 flex shrink-0 flex-col-reverse gap-2 border-t border-border bg-background px-6 py-3 sm:flex-row sm:items-center sm:justify-end",
         className,
       )}
       data-slot="easy-drawer-footer"
@@ -224,6 +236,7 @@ export type EasyDrawerProps = DrawerPrimitive.Root.Props & {
   closeOnBackdropClick?: boolean;
   closeOnEscape?: boolean;
   closeOnSwipe?: boolean;
+  scrollFade?: boolean;
 };
 
 export function EasyDrawer({
@@ -239,6 +252,7 @@ export function EasyDrawer({
   closeOnBackdropClick,
   closeOnEscape,
   closeOnSwipe,
+  scrollFade = true,
   ...props
 }: EasyDrawerProps): React.ReactElement {
   return (
@@ -270,7 +284,7 @@ export function EasyDrawer({
             )}
           </EasyDrawerHeader>
         )}
-        <EasyDrawerBody>{children}</EasyDrawerBody>
+        <EasyDrawerBody scrollFade={scrollFade}>{children}</EasyDrawerBody>
         {footer && <EasyDrawerFooter>{footer}</EasyDrawerFooter>}
       </EasyDrawerPopup>
     </EasyDrawerRoot>

@@ -25,6 +25,8 @@ export interface NumberFlowProps
   duration?: number;
   trend?: NumberFlowTrend;
   respectMotionPreference?: boolean;
+  /** Reserve the final formatted width before animation starts. */
+  reserveWidth?: boolean;
   size?: NumberFlowSize;
   variant?: NumberFlowVariant;
   onAnimationsStart?: () => void;
@@ -100,11 +102,13 @@ export function NumberFlow({
   duration = 520,
   trend,
   respectMotionPreference = true,
+  reserveWidth = true,
   size = "default",
   variant = "default",
   onAnimationsStart,
   onAnimationsFinish,
   className,
+  style,
   ...props
 }: NumberFlowProps): React.ReactElement {
   const previousValueRef = React.useRef(value);
@@ -140,6 +144,7 @@ export function NumberFlow({
     () => `${prefix ?? ""}${formatNumber(value, locales, format)}${suffix ?? ""}`,
     [format, locales, prefix, suffix, value],
   );
+  const reservedInlineSize = `${Math.max(1, Array.from(finalFormattedValue).length)}ch`;
 
   return (
     <NumberFlowPrimitive
@@ -147,7 +152,7 @@ export function NumberFlow({
       aria-label={props["aria-label"] ?? finalFormattedValue}
       animated={animated}
       className={cn(
-        "inline-flex items-baseline whitespace-nowrap font-mono tabular-nums transition-colors [&_.number]:align-baseline [&_.section]:align-baseline [&_.symbol]:align-baseline",
+        "inline-flex items-baseline justify-end whitespace-nowrap font-mono tabular-nums transition-colors [&_.number]:align-baseline [&_.section]:align-baseline [&_.symbol]:align-baseline",
         numberFlowSizeClassNames[size],
         numberFlowVariantClassNames[variant],
         trendName === "up" &&
@@ -158,6 +163,13 @@ export function NumberFlow({
       )}
       data-slot="number-flow"
       data-trend={trendName}
+      style={{
+        ...style,
+        minInlineSize:
+          reserveWidth && style?.minInlineSize === undefined
+            ? reservedInlineSize
+            : style?.minInlineSize,
+      }}
       format={format as NumberFlowFormat | undefined}
       locales={locales}
       onAnimationsFinish={onAnimationsFinish ? () => onAnimationsFinish() : undefined}

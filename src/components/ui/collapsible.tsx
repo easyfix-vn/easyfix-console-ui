@@ -1,7 +1,7 @@
 "use client";
 
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
-import type React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export function Collapsible({
@@ -14,18 +14,19 @@ export type CollapsibleTriggerProps = CollapsiblePrimitive.Trigger.Props & {
   asChild?: boolean;
 };
 
-export function CollapsibleTrigger({
-  className,
-  ...props
-}: CollapsibleTriggerProps): React.ReactElement {
+export const CollapsibleTrigger = React.forwardRef<
+  HTMLButtonElement,
+  CollapsibleTriggerProps
+>(function CollapsibleTrigger({ className, ...props }, ref) {
   return (
     <CollapsiblePrimitive.Trigger
+      ref={ref}
       className={className}
       data-slot="collapsible-trigger"
       {...props}
     />
   );
-}
+});
 
 export function CollapsiblePanel({
   className,

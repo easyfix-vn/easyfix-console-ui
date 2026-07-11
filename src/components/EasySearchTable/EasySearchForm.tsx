@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import { ChevronDown, X } from 'lucide-react'
+import { ChevronDown, RotateCcwIcon, SearchIcon, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEasyT } from '@/i18n'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,25 @@ import {
 } from '@/components/ui/select'
 import type { SearchFieldDef, SearchMode } from './types'
 
-export const EASY_SEARCH_FORM_COLLAPSED_FIELDS = 3
+export const EASY_SEARCH_FORM_DEFAULT_COLLAPSE_THRESHOLD = 5
+export const EASY_SEARCH_FORM_COLLAPSED_FIELDS = EASY_SEARCH_FORM_DEFAULT_COLLAPSE_THRESHOLD
+
+export function getSearchFieldDefaultValues(
+  fields: SearchFieldDef[],
+): Record<string, unknown> {
+  return Object.fromEntries(
+    fields.flatMap((field) => {
+      if (field.defaultValue !== undefined) {
+        return [[field.key, field.defaultValue]]
+      }
+
+      // Custom controlled components such as Base UI NumberField use null as
+      // their empty value. Supplying it from the first render avoids switching
+      // from uncontrolled to controlled after the first change.
+      return field.type === 'custom' ? [[field.key, null]] : []
+    }),
+  )
+}
 
 export type EasySearchFormActionsProps = {
   onSearch: () => void
@@ -37,6 +55,8 @@ export type EasySearchFormProps = {
   onToggle?: () => void
   actionsClassName?: string
   hideActionsOnMobile?: boolean
+  collapseThreshold?: number
+  showActions?: boolean
 }
 
 export function EasySearchFormActions({
@@ -53,13 +73,16 @@ export function EasySearchFormActions({
   return (
     <div
       className={cn('flex shrink-0 flex-wrap items-center justify-end gap-2', className)}
+      data-slot="easy-search-form-actions"
       style={style}
     >
-      <Button variant="outline" size="sm" onClick={onReset}>
-        {t('actions.reset')}
-      </Button>
       <Button size="sm" onClick={onSearch}>
+        <SearchIcon className="size-4" />
         {t('actions.search')}
+      </Button>
+      <Button variant="outline" size="sm" onClick={onReset}>
+        <RotateCcwIcon className="size-4" />
+        {t('actions.reset')}
       </Button>
       {canCollapse && (
         <Button variant="ghost" size="sm" onClick={onToggle}>
@@ -87,17 +110,24 @@ export function EasySearchForm({
   onToggle,
   actionsClassName,
   hideActionsOnMobile = false,
+  collapseThreshold = EASY_SEARCH_FORM_DEFAULT_COLLAPSE_THRESHOLD,
+  showActions = true,
 }: EasySearchFormProps) {
   const t = useEasyT()
   const [internalCollapsed, setInternalCollapsed] = useState(true)
-  const [internalValues, setInternalValues] = useState<Record<string, unknown>>({})
+  const [internalValues, setInternalValues] = useState<Record<string, unknown>>(
+    () => getSearchFieldDefaultValues(fields),
+  )
 
   const values = controlledValues ?? internalValues
   const collapsed = controlledCollapsed ?? internalCollapsed
   const toggle = onToggle ?? (() => setInternalCollapsed((v) => !v))
 
-  const visibleFields = collapsed ? fields.slice(0, EASY_SEARCH_FORM_COLLAPSED_FIELDS) : fields
-  const canCollapse = fields.length > EASY_SEARCH_FORM_COLLAPSED_FIELDS
+  const normalizedCollapseThreshold = Math.max(1, collapseThreshold)
+  const visibleFields = collapsed
+    ? fields.slice(0, normalizedCollapseThreshold)
+    : fields
+  const canCollapse = fields.length > normalizedCollapseThreshold
 
   function updateValues(next: Record<string, unknown>) {
     if (!controlledValues) {
@@ -137,7 +167,7 @@ export function EasySearchForm({
   }
 
   function handleReset() {
-    updateValues({})
+    updateValues(getSearchFieldDefaultValues(fields))
     onReset()
   }
 
@@ -186,7 +216,10 @@ export function EasySearchForm({
             </div>
           ) : field.type === 'custom' ? (
             <div className="min-w-0 flex-1">
-              {field.render(values[field.key], (v) => handleChange(field, v))}
+              {field.render(
+                values[field.key] ?? field.defaultValue ?? null,
+                (v) => handleChange(field, v),
+              )}
             </div>
           ) : (
             <Select
@@ -209,15 +242,16 @@ export function EasySearchForm({
         </div>
       ))}
 
-      <EasySearchFormActions
-        onSearch={handleSearch}
-        onReset={handleReset}
-        canCollapse={canCollapse}
-        collapsed={collapsed}
-        onToggle={toggle}
-        className={cn(actionsClassName, hideActionsOnMobile && 'hidden md:flex')}
-        style={{ gridColumnEnd: -1 }}
-      />
+      {showActions && (
+        <EasySearchFormActions
+          onSearch={handleSearch}
+          onReset={handleReset}
+          canCollapse={canCollapse}
+          collapsed={collapsed}
+          onToggle={toggle}
+          className={cn(actionsClassName, hideActionsOnMobile && 'hidden md:flex')}
+        />
+      )}
     </div>
   )
 }

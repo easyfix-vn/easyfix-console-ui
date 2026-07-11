@@ -1,6 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   MenuItem,
   MenuSub,
@@ -71,26 +76,40 @@ describe("Sidebar", () => {
 
     render(
       <SidebarProvider defaultOpen={false}>
-        <SidebarMenuButton
-          collapsedMenu={
-            <>
-              <MenuItem isActive>快速开始</MenuItem>
-              <MenuSub>
-                <MenuSubTrigger isActive>组件</MenuSubTrigger>
-                <MenuSubPopup>
-                  <MenuItem>Button 按钮</MenuItem>
-                </MenuSubPopup>
-              </MenuSub>
-            </>
-          }
-        >
-          <svg aria-hidden="true" />
-          <span>文档中心</span>
-        </SidebarMenuButton>
+        <Collapsible>
+          <SidebarMenuButton
+            tooltip="文档中心"
+            collapsedMenu={
+              <>
+                <MenuItem isActive>快速开始</MenuItem>
+                <MenuSub>
+                  <MenuSubTrigger isActive>组件</MenuSubTrigger>
+                  <MenuSubPopup>
+                    <MenuItem>Button 按钮</MenuItem>
+                  </MenuSubPopup>
+                </MenuSub>
+              </>
+            }
+            render={<CollapsibleTrigger />}
+          >
+            <svg aria-hidden="true" />
+            <span>文档中心</span>
+          </SidebarMenuButton>
+          <CollapsibleContent>展开态子菜单</CollapsibleContent>
+        </Collapsible>
       </SidebarProvider>,
     );
 
-    await user.click(screen.getByRole("button", { name: "文档中心" }));
+    const topLevelButton = screen.getByRole("button", { name: "文档中心" });
+
+    await user.hover(topLevelButton);
+    await waitFor(() => {
+      expect(
+        document.querySelector('[data-slot="tooltip-popup"]'),
+      ).toHaveTextContent("文档中心");
+    });
+
+    await user.click(topLevelButton);
 
     expect(await screen.findByText("快速开始")).toBeInTheDocument();
     expect(screen.getByText("组件")).toBeInTheDocument();
@@ -108,5 +127,28 @@ describe("Sidebar", () => {
     expect(screen.getByText("组件")).toHaveClass(
       "data-[active=true]:text-sidebar-primary",
     );
+  });
+
+  it("shows submenu names in a right-side tooltip while expanded", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SidebarProvider defaultOpen>
+        <SidebarMenuSubButton tooltip="Button 按钮">
+          <svg aria-hidden="true" />
+          <span>Button 按钮</span>
+        </SidebarMenuSubButton>
+      </SidebarProvider>,
+    );
+
+    await user.hover(screen.getByText("Button 按钮").closest("a")!);
+
+    let tooltip: Element | null = null;
+    await waitFor(() => {
+      tooltip = document.querySelector('[data-slot="tooltip-popup"]');
+      expect(tooltip).toHaveTextContent("Button 按钮");
+    });
+    expect(tooltip).toHaveTextContent("Button 按钮");
+    expect(tooltip.parentElement).toHaveAttribute("data-side", "right");
   });
 });

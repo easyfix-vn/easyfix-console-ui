@@ -9,7 +9,12 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
+import {
+  Menu,
+  MenuPopup,
+  MenuPrimitive,
+  MenuTrigger,
+} from "@/components/ui/menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -23,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipPopup,
+  TooltipPrimitive,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -582,13 +588,16 @@ export const SidebarMenuButton = React.forwardRef<
     render: childRender,
   });
 
+  const tooltipProps =
+    typeof tooltip === "string" ? { children: tooltip } : tooltip;
+
   if (collapsedMenu && state === "collapsed" && !isMobile) {
     const {
       className: collapsedMenuClassName,
       ...restCollapsedMenuProps
     } = collapsedMenuProps ?? {};
 
-    return (
+    const menu = (
       <Menu>
         <MenuTrigger
           render={buttonElement as React.ReactElement<Record<string, unknown>>}
@@ -604,16 +613,43 @@ export const SidebarMenuButton = React.forwardRef<
         </MenuPopup>
       </Menu>
     );
+
+    if (!tooltipProps) {
+      return menu;
+    }
+
+    return (
+      <Tooltip>
+        <Menu>
+          <TooltipPrimitive.Trigger
+            data-slot="tooltip-trigger"
+            delay={200}
+            render={
+              <MenuPrimitive.Trigger
+                data-slot="menu-trigger"
+                render={
+                  buttonElement as React.ReactElement<Record<string, unknown>>
+                }
+              />
+            }
+          />
+          <MenuPopup
+            align="start"
+            className={cn("w-52", collapsedMenuClassName)}
+            side="right"
+            sideOffset={8}
+            {...restCollapsedMenuProps}
+          >
+            {collapsedMenu}
+          </MenuPopup>
+        </Menu>
+        <TooltipPopup align="center" side="right" {...tooltipProps} />
+      </Tooltip>
+    );
   }
 
-  if (!tooltip) {
+  if (!tooltipProps) {
     return buttonElement;
-  }
-
-  if (typeof tooltip === "string") {
-    tooltip = {
-      children: tooltip,
-    };
   }
 
   return (
@@ -625,7 +661,7 @@ export const SidebarMenuButton = React.forwardRef<
         align="center"
         hidden={state !== "collapsed" || isMobile}
         side="right"
-        {...tooltip}
+        {...tooltipProps}
       />
     </Tooltip>
   );
@@ -758,6 +794,7 @@ export function SidebarMenuSubItem({
 type SidebarMenuSubButtonProps = useRender.ComponentProps<"a"> & {
   size?: "sm" | "md";
   isActive?: boolean;
+  tooltip?: string | React.ComponentProps<typeof TooltipPopup>;
   asChild?: boolean;
 };
 
@@ -767,12 +804,14 @@ export const SidebarMenuSubButton = React.forwardRef<
 >(function SidebarMenuSubButton({
   size = "md",
   isActive = false,
+  tooltip,
   className,
   children,
   render,
   asChild,
   ...props
 }, ref): React.ReactElement {
+  const sidebar = React.useContext(SidebarContext);
   const childRender =
     asChild && React.isValidElement(children) ? children : render;
 
@@ -793,9 +832,30 @@ export const SidebarMenuSubButton = React.forwardRef<
     ref,
   };
 
-  return useRender({
+  const buttonElement = useRender({
     defaultTagName: "a",
     props: mergeProps<"a">(defaultProps, props),
     render: childRender,
   });
+
+  if (!tooltip) {
+    return buttonElement;
+  }
+
+  const tooltipProps =
+    typeof tooltip === "string" ? { children: tooltip } : tooltip;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={buttonElement as React.ReactElement<Record<string, unknown>>}
+      />
+      <TooltipPopup
+        align="center"
+        hidden={sidebar?.state === "collapsed" || sidebar?.isMobile === true}
+        side="right"
+        {...tooltipProps}
+      />
+    </Tooltip>
+  );
 });

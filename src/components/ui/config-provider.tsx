@@ -6,7 +6,11 @@ import {
   type EasyLocale,
   type LocaleMessages,
 } from "@/i18n";
-import { getSystemTimeZone, normalizeDateTimeZone } from "@/lib/date-time-zone";
+import {
+  getSystemTimeZone,
+  normalizeDateTimeZone,
+  type IanaTimeZone,
+} from "@/lib/date-time-zone";
 
 export type ConfigProviderProps = {
   /** 应用语言，控制内置组件文案（搜索、表格、分页等） */
@@ -15,8 +19,8 @@ export type ConfigProviderProps = {
   theme?: "light" | "dark" | "system";
   /** CSS 类名前缀，预留给未来支持自定义命名空间 */
   prefix?: string;
-  /** 默认 IANA 时区；未传时读取浏览器时区 */
-  timeZone?: string;
+  /** IANA 时区标识（如 Asia/Shanghai 或 UTC）；不接受 UTC+08 这类偏移标签 */
+  timeZone?: IanaTimeZone;
   /** 自定义/扩展翻译文案，会与内置 messages 深合并（可覆盖默认值） */
   messages?: LocaleMessages;
   children: React.ReactNode;
@@ -26,7 +30,7 @@ type ConfigContextValue = {
   locale: EasyLocale;
   theme: "light" | "dark" | "system";
   prefix: string;
-  timeZone: string;
+  timeZone: IanaTimeZone;
   /** 当前主题解析为实际生效的 light/dark（system 会跟随系统） */
   resolvedTheme: "light" | "dark";
 };

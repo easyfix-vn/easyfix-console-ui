@@ -13,7 +13,7 @@ describe("TimezoneSelect", () => {
     );
 
     expect(screen.getByRole("combobox")).toHaveTextContent("UTC+08");
-    expect(screen.getByRole("combobox")).toHaveTextContent("中国 · 北京");
+    expect(screen.getByRole("combobox")).toHaveTextContent("中国 · 上海");
   });
 
   it("renders all built-in offsets and changes the uncontrolled value", async () => {
@@ -28,9 +28,25 @@ describe("TimezoneSelect", () => {
     await user.click(screen.getByRole("combobox"));
 
     expect(screen.getAllByRole("option")).toHaveLength(38);
-    await user.click(screen.getByRole("option", { name: /UTC\+07.*越南 · 河内/ }));
+    await user.click(
+      screen.getByRole("option", { name: /UTC\+07.*越南 · 胡志明市/ }),
+    );
 
     expect(screen.getByRole("combobox")).toHaveTextContent("UTC+07");
-    expect(screen.getByRole("combobox")).toHaveTextContent("越南 · 河内");
+    expect(screen.getByRole("combobox")).toHaveTextContent("越南 · 胡志明市");
+  });
+
+  it("shows the selected IANA zone instead of another city at the same offset", () => {
+    render(
+      <ConfigProvider locale="en-US" theme="light" timeZone="Asia/Bangkok">
+        <TimezoneSelect />
+      </ConfigProvider>,
+    );
+
+    expect(screen.getByRole("combobox")).toHaveTextContent("UTC+07");
+    expect(screen.getByRole("combobox")).toHaveTextContent("Asia/Bangkok");
+    expect(screen.getByRole("combobox")).not.toHaveTextContent(
+      "Vietnam · Ho Chi Minh",
+    );
   });
 });
