@@ -16,15 +16,15 @@ npm install @easyfix/console-ui
 pnpm add @easyfix/console-ui
 ```
 
-For local development, install from the sibling folder:
+For local development inside `easyfix_3.x`, build the local package from `easyfix_dev/fe` and install it into a host app:
 
 ```bash
-cd easyfix_fe/easyfix_console_ui
+cd easyfix_dev/fe/easyfix_console_ui
 pnpm install
 pnpm build
 
-cd ../microfe-app-demo
-pnpm add ../easyfix_console_ui
+cd ../../../easyfix_fe/easy-identity-hub
+pnpm add ../../easyfix_dev/fe/easyfix_console_ui
 ```
 
 

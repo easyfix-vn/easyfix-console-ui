@@ -9,6 +9,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -371,7 +372,7 @@ export function SidebarHeader({
 }: React.ComponentProps<"div">): React.ReactElement {
   return (
     <div
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn("flex min-w-0 flex-col gap-2 overflow-hidden p-2", className)}
       data-sidebar="header"
       data-slot="sidebar-header"
       {...props}
@@ -413,7 +414,7 @@ export function SidebarContent({
 }: React.ComponentProps<"div">): React.ReactElement {
   return (
     <ScrollArea
-      className="**:data-[slot=scroll-area-scrollbar]:hidden"
+      className="size-full **:data-[slot=scroll-area-scrollbar]:hidden"
       scrollFade
     >
       <div
@@ -534,6 +535,8 @@ export function SidebarMenuItem({
 type SidebarMenuButtonProps = useRender.ComponentProps<"button"> & {
   isActive?: boolean;
   tooltip?: string | React.ComponentProps<typeof TooltipPopup>;
+  collapsedMenu?: React.ReactNode;
+  collapsedMenuProps?: Omit<React.ComponentProps<typeof MenuPopup>, "children">;
   asChild?: boolean;
 } & VariantProps<typeof sidebarMenuButtonVariants>;
 
@@ -545,6 +548,8 @@ export const SidebarMenuButton = React.forwardRef<
   variant = "default",
   size = "default",
   tooltip,
+  collapsedMenu,
+  collapsedMenuProps,
   className,
   children,
   render,
@@ -576,6 +581,30 @@ export const SidebarMenuButton = React.forwardRef<
     props: buttonProps,
     render: childRender,
   });
+
+  if (collapsedMenu && state === "collapsed" && !isMobile) {
+    const {
+      className: collapsedMenuClassName,
+      ...restCollapsedMenuProps
+    } = collapsedMenuProps ?? {};
+
+    return (
+      <Menu>
+        <MenuTrigger
+          render={buttonElement as React.ReactElement<Record<string, unknown>>}
+        />
+        <MenuPopup
+          align="start"
+          className={cn("w-52", collapsedMenuClassName)}
+          side="right"
+          sideOffset={8}
+          {...restCollapsedMenuProps}
+        >
+          {collapsedMenu}
+        </MenuPopup>
+      </Menu>
+    );
+  }
 
   if (!tooltip) {
     return buttonElement;
@@ -750,8 +779,8 @@ export const SidebarMenuSubButton = React.forwardRef<
   const defaultProps = {
     children: asChild ? undefined : children,
     className: cn(
-      "flex h-8 w-full min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-lg px-2 text-sidebar-foreground outline-hidden ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 sm:h-7 [&>span:last-child]:truncate [&>svg:not([class*='size-'])]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
-      "data-[active=true]:bg-sidebar-primary/10 data-[active=true]:text-sidebar-primary data-[active=true]:font-semibold",
+      "flex h-8 w-full min-w-0 -translate-x-px cursor-pointer items-center gap-2 overflow-hidden rounded-lg px-2 text-sidebar-foreground outline-hidden ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 sm:h-7 [&>span:last-child]:truncate [&>svg:not([class*='size-'])]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
+      "data-[active=true]:bg-sidebar-primary/10 data-[active=true]:text-sidebar-primary data-[active=true]:font-semibold data-[active=true]:[&>svg]:text-sidebar-primary",
       size === "sm" && "text-xs",
       size === "md" && "text-sm",
       "group-data-[collapsible=icon]:hidden",

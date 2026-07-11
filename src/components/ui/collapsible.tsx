@@ -16,7 +16,6 @@ export type CollapsibleTriggerProps = CollapsiblePrimitive.Trigger.Props & {
 
 export function CollapsibleTrigger({
   className,
-  asChild: _asChild,
   ...props
 }: CollapsibleTriggerProps): React.ReactElement {
   return (

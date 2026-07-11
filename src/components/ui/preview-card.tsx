@@ -8,10 +8,15 @@ export const PreviewCard: typeof PreviewCardPrimitive.Root =
   PreviewCardPrimitive.Root;
 
 export function PreviewCardTrigger({
+  delay = 200,
   ...props
 }: PreviewCardPrimitive.Trigger.Props): React.ReactElement {
   return (
-    <PreviewCardPrimitive.Trigger data-slot="preview-card-trigger" {...props} />
+    <PreviewCardPrimitive.Trigger
+      data-slot="preview-card-trigger"
+      delay={delay}
+      {...props}
+    />
   );
 }
 

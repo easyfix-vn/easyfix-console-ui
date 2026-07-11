@@ -4,12 +4,26 @@ import cnFlag from "flag-icons/flags/4x3/cn.svg";
 import gbFlag from "flag-icons/flags/4x3/gb.svg";
 import vnFlag from "flag-icons/flags/4x3/vn.svg";
 import { type easyButtonVariants, EasyButton } from "@/components/EasyButton";
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+  SegmentedControlList,
+  type SegmentedControlSize,
+} from "@/components/ui/segmented-control";
 import { cn } from "@/lib/utils";
 
+type EasyButtonSize = NonNullable<VariantProps<typeof easyButtonVariants>["size"]>;
+
+export type EasyLocaleSwitchSize = EasyButtonSize | SegmentedControlSize;
+
 export type EasyLocaleOption = {
+  /** Locale value passed to value/onChange, such as "vi" or "en-US". */
   locale: string;
+  /** Display label shown next to the flag when showLabel is enabled. */
   label: string;
+  /** flag-icons country code fallback, such as "vn", "gb", or "cn". */
   flag: string;
+  /** Optional custom flag image source. */
   flagSrc?: string;
 };
 
@@ -19,15 +33,49 @@ export type EasyLocaleSwitchProps = {
   onChange: (locale: string) => void;
   className?: string;
   showLabel?: boolean;
-  size?: VariantProps<typeof easyButtonVariants>["size"];
+  size?: EasyLocaleSwitchSize;
   variant?: "default" | "pill";
 };
 
 export const defaultEasyLocales: EasyLocaleOption[] = [
-  { locale: "zh-CN", label: "中文", flag: "cn", flagSrc: cnFlag },
-  { locale: "en-US", label: "EN", flag: "gb", flagSrc: gbFlag },
   { locale: "vi", label: "VI", flag: "vn", flagSrc: vnFlag },
+  { locale: "en-US", label: "EN", flag: "gb", flagSrc: gbFlag },
+  { locale: "zh-CN", label: "中文", flag: "cn", flagSrc: cnFlag },
 ];
+
+const localeFlagSizeClasses: Record<SegmentedControlSize, string> = {
+  xs: "h-3 w-4",
+  sm: "h-3.5 w-[18px]",
+  md: "h-3.5 w-[18px]",
+  lg: "h-4 w-5",
+};
+
+const localeIconOnlyItemSizeClasses: Record<SegmentedControlSize, string> = {
+  xs: "min-w-6 px-0",
+  sm: "min-w-7 px-0",
+  md: "min-w-8 px-0",
+  lg: "min-w-9 px-0",
+};
+
+function getSegmentedControlSize(size: EasyLocaleSwitchSize): SegmentedControlSize {
+  if (size === "xs") {
+    return "xs";
+  }
+  if (size === "lg" || size === "xl" || size === "icon-lg" || size === "icon-xl") {
+    return "lg";
+  }
+  if (size === "default" || size === "icon") {
+    return "md";
+  }
+  return "sm";
+}
+
+function getButtonSize(size: EasyLocaleSwitchSize): EasyButtonSize {
+  if (size === "md") {
+    return "default";
+  }
+  return size as EasyButtonSize;
+}
 
 export function EasyLocaleSwitch({
   locales = defaultEasyLocales,
@@ -36,51 +84,62 @@ export function EasyLocaleSwitch({
   className,
   showLabel = true,
   size = "xs",
-  variant = "default",
+  variant = "pill",
 }: EasyLocaleSwitchProps): React.ReactElement {
   if (variant === "pill") {
+    const segmentedSize = getSegmentedControlSize(size);
+
     return (
-      <div
-        className={cn(
-          "flex rounded-full border border-border bg-muted p-0.5",
-          className,
-        )}
+      <SegmentedControl
+        className={cn("rounded-full", className)}
         data-slot="easy-locale-switch"
+        onValueChange={(nextValue) => onChange(String(nextValue))}
+        size={segmentedSize}
+        value={value}
       >
-        {locales.map((item) => {
-          const active = value === item.locale;
-          const flagEl = item.flagSrc ? (
-            <img
-              src={item.flagSrc}
-              alt=""
-              className="h-3.5 w-[18px] rounded-[2px] object-cover shadow-[0_0_0_1px_rgba(0,0,0,.08)]"
-            />
-          ) : (
-            <span
-              aria-hidden="true"
-              className={cn("fi h-3.5 w-[18px] rounded-[2px]", `fi-${item.flag}`)}
-            />
-          );
-          return (
-            <button
-              aria-label={item.label}
-              aria-pressed={active}
-              key={item.locale}
-              type="button"
-              title={item.label}
-              onClick={() => onChange(item.locale)}
-              className={cn(
-                "flex items-center justify-center rounded-full text-muted-foreground transition",
-                showLabel ? "gap-1 px-2.5 py-1 text-xs font-medium" : "size-8",
-                active && "bg-background text-foreground shadow-sm ring-1 ring-border/50",
-              )}
-            >
-              {flagEl}
-              {showLabel && <span>{item.label}</span>}
-            </button>
-          );
-        })}
-      </div>
+        <SegmentedControlList
+          className="rounded-full border border-border bg-muted [&_[data-slot=segmented-control-indicator]]:rounded-full"
+          indicatorClassName="ring-1 ring-border/50"
+        >
+          {locales.map((item) => {
+            const flagEl = item.flagSrc ? (
+              <img
+                alt=""
+                className={cn(
+                  "rounded-[2px] object-cover shadow-[0_0_0_1px_rgba(0,0,0,.08)]",
+                  localeFlagSizeClasses[segmentedSize],
+                )}
+                src={item.flagSrc}
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "fi rounded-[2px]",
+                  localeFlagSizeClasses[segmentedSize],
+                  `fi-${item.flag}`,
+                )}
+              />
+            );
+
+            return (
+              <SegmentedControlItem
+                aria-label={item.label}
+                className={cn(
+                  "rounded-full",
+                  !showLabel && localeIconOnlyItemSizeClasses[segmentedSize],
+                )}
+                key={item.locale}
+                title={item.label}
+                value={item.locale}
+              >
+                {flagEl}
+                {showLabel && <span>{item.label}</span>}
+              </SegmentedControlItem>
+            );
+          })}
+        </SegmentedControlList>
+      </SegmentedControl>
     );
   }
 
@@ -94,7 +153,7 @@ export function EasyLocaleSwitch({
             aria-pressed={active}
             key={item.locale}
             onClick={() => onChange(item.locale)}
-            size={size}
+            size={getButtonSize(size)}
             variant={active ? "default" : "outline"}
           >
             <span

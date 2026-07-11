@@ -1,8 +1,9 @@
 "use client";
 
 import { Toolbar as ToolbarPrimitive } from "@base-ui/react/toolbar";
-import type React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function Toolbar({
   className,
@@ -20,16 +21,49 @@ export function Toolbar({
   );
 }
 
+export type ToolbarButtonProps = ToolbarPrimitive.Button.Props & {
+  label?: React.ReactNode;
+  showLabel?: boolean;
+};
+
 export function ToolbarButton({
+  "aria-label": ariaLabel,
+  children,
   className,
+  label,
+  showLabel = false,
   ...props
-}: ToolbarPrimitive.Button.Props): React.ReactElement {
-  return (
+}: ToolbarButtonProps): React.ReactElement {
+  const accessibleLabel =
+    typeof label === "string" && ariaLabel === undefined ? label : ariaLabel;
+  const content = (
+    <>
+      {children}
+      {showLabel && label ? (
+        <span className="truncate text-sm leading-none">{label}</span>
+      ) : null}
+    </>
+  );
+  const button = (
     <ToolbarPrimitive.Button
+      aria-label={accessibleLabel}
       className={cn(className)}
       data-slot="toolbar-button"
       {...props}
-    />
+    >
+      {content}
+    </ToolbarPrimitive.Button>
+  );
+
+  if (!label || showLabel) {
+    return button;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger render={button} />
+      <TooltipPopup side="bottom">{label}</TooltipPopup>
+    </Tooltip>
   );
 }
 

@@ -5,9 +5,6 @@ export type EasyfixLogoIconProps = React.SVGAttributes<SVGSVGElement> & {
   size?: number | string;
 };
 
-/** @deprecated Use EasyfixLogoIcon instead */
-export type EasyFixLogoIconProps = EasyfixLogoIconProps;
-
 let logoIdSeed = 0;
 
 /**

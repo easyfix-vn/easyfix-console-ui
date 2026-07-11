@@ -6,6 +6,7 @@ import {
   type EasyLocale,
   type LocaleMessages,
 } from "@/i18n";
+import { getSystemTimeZone, normalizeDateTimeZone } from "@/lib/date-time-zone";
 
 export type ConfigProviderProps = {
   /** 应用语言，控制内置组件文案（搜索、表格、分页等） */
@@ -14,6 +15,8 @@ export type ConfigProviderProps = {
   theme?: "light" | "dark" | "system";
   /** CSS 类名前缀，预留给未来支持自定义命名空间 */
   prefix?: string;
+  /** 默认 IANA 时区；未传时读取浏览器时区 */
+  timeZone?: string;
   /** 自定义/扩展翻译文案，会与内置 messages 深合并（可覆盖默认值） */
   messages?: LocaleMessages;
   children: React.ReactNode;
@@ -23,6 +26,7 @@ type ConfigContextValue = {
   locale: EasyLocale;
   theme: "light" | "dark" | "system";
   prefix: string;
+  timeZone: string;
   /** 当前主题解析为实际生效的 light/dark（system 会跟随系统） */
   resolvedTheme: "light" | "dark";
 };
@@ -31,6 +35,7 @@ const ConfigContext = React.createContext<ConfigContextValue>({
   locale: "zh-CN",
   theme: "system",
   prefix: "easy",
+  timeZone: getSystemTimeZone(),
   resolvedTheme: "light",
 });
 
@@ -42,9 +47,14 @@ export function ConfigProvider({
   locale = "zh-CN",
   theme = "system",
   prefix = "easy",
+  timeZone,
   messages,
   children,
 }: ConfigProviderProps): React.ReactElement {
+  const resolvedTimeZone = React.useMemo(
+    () => normalizeDateTimeZone(timeZone),
+    [timeZone],
+  );
   const [resolvedTheme, setResolvedTheme] = React.useState<"light" | "dark">(
     () => {
       if (theme === "dark") return "dark";
@@ -89,8 +99,8 @@ export function ConfigProvider({
   }, [locale]);
 
   const value = React.useMemo(
-    () => ({ locale, theme, prefix, resolvedTheme }),
-    [locale, theme, prefix, resolvedTheme],
+    () => ({ locale, theme, prefix, timeZone: resolvedTimeZone, resolvedTheme }),
+    [locale, theme, prefix, resolvedTimeZone, resolvedTheme],
   );
 
   return (

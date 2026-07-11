@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { CheckboxGroupItem } from '@/components/ui/checkbox-group'
 import {
   Popover,
   PopoverContent,
@@ -81,7 +81,7 @@ function SortableItem({
       >
         <GripVertical className="size-4" />
       </span>
-      <Checkbox
+      <CheckboxGroupItem
         id={`${configId}-${id}`}
         className="cursor-pointer"
         checked={checked}

@@ -178,7 +178,7 @@ export const DataListItem = React.forwardRef<HTMLDivElement, DataListItemProps>(
     const gridStyle: React.CSSProperties | undefined =
       orientation === "horizontal"
         ? {
-            gridTemplateColumns: `minmax(${toCssLen(labelMinWidth, "auto")}, ${toCssLen(labelMaxWidth, "max-content")}) minmax(0, 1fr)`,
+            gridTemplateColumns: `minmax(${toCssLen(labelMinWidth, "0px")}, ${toCssLen(labelMaxWidth, "40%")}) minmax(0, 1fr)`,
             ...style,
           }
         : style;

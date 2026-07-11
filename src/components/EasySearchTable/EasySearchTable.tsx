@@ -31,11 +31,15 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { Tooltip, TooltipTrigger, TooltipPopup } from '@/components/ui/tooltip'
-import { EasySearchForm } from './EasySearchForm'
+import {
+  EasySearchForm,
+  EasySearchFormActions,
+  EASY_SEARCH_FORM_COLLAPSED_FIELDS,
+} from './EasySearchForm'
 import { EasyColumnConfig } from './EasyColumnConfig'
-import type { ColumnDef, SearchFieldDef, SearchParams, SearchTableView, SortState } from './types'
+import type { ColumnDef, SearchFieldDef, SearchMode, SearchParams, SearchTableView, SortState } from './types'
 
-export type { ColumnDef, SearchFieldDef, SearchParams, SearchTableView, SortState, SortOrder, PageResult } from './types'
+export type { ColumnDef, SearchFieldDef, SearchMode, SearchParams, SearchTableView, SortState, SortOrder, PageResult } from './types'
 
 export type EasySearchTableExportContext<T> = {
   data: T[]
@@ -50,6 +54,7 @@ export type EasySearchTableExportContext<T> = {
 export type EasySearchTableProps<T> = {
   columns: ColumnDef<T>[]
   searchFields: SearchFieldDef[]
+  searchMode?: SearchMode
   data: T[]
   total: number
   page: number
@@ -91,6 +96,7 @@ function getDefaultVisibleKeys<T>(columns: ColumnDef<T>[]) {
 export function EasySearchTable<T extends Record<string, unknown>>({
   columns,
   searchFields,
+  searchMode = 'auto',
   data,
   total,
   page,
@@ -127,6 +133,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     availableViews.includes(defaultView) ? defaultView : availableViews[0],
   )
   const [searchValues, setSearchValues] = useState<Record<string, unknown>>({})
+  const [searchCollapsed, setSearchCollapsed] = useState(true)
   const [exportOpen, setExportOpen] = useState(false)
   const [sortState, setSortState] = useState<SortState | null>(defaultSort ?? null)
   const [jumpPage, setJumpPage] = useState('')
@@ -208,6 +215,14 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     onSearch({ page: 1, pageSize: newSize, ...searchValues })
   }
 
+  function handleToolbarSearch() {
+    handleSearch(searchValues)
+  }
+
+  function handleToggleSearchCollapsed() {
+    setSearchCollapsed((value) => !value)
+  }
+
   function handleJumpPage() {
     const n = parseInt(jumpPage, 10)
     if (!isNaN(n)) {
@@ -277,12 +292,15 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     exportCurrentData,
   }
 
+  const canCollapseSearch = searchFields.length > EASY_SEARCH_FORM_COLLAPSED_FIELDS
+
   function renderExportButton() {
     const button = (
       <Button
         variant="outline"
         size="icon"
         className="size-8"
+        aria-label={t('actions.export')}
         onClick={renderExportContent ? undefined : exportCurrentData}
       >
         <Download className="size-4" />
@@ -524,14 +542,27 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     <div className="min-w-0 space-y-4">
       <EasySearchForm
         fields={searchFields}
+        searchMode={searchMode}
+        values={searchValues}
         onSearch={handleSearch}
         onReset={handleReset}
         onValuesChange={setSearchValues}
+        collapsed={searchCollapsed}
+        onToggle={handleToggleSearchCollapsed}
+        hideActionsOnMobile
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           {toolbarActions}
+          <EasySearchFormActions
+            onSearch={handleToolbarSearch}
+            onReset={handleReset}
+            canCollapse={canCollapseSearch}
+            collapsed={searchCollapsed}
+            onToggle={handleToggleSearchCollapsed}
+            className="md:hidden"
+          />
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -575,8 +606,8 @@ export function EasySearchTable<T extends Record<string, unknown>>({
         {renderContent()}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm sm:justify-between">
+        <div className="hidden items-center gap-3 sm:flex">
           <span className="text-[var(--muted-foreground)]">
             {t('searchTable.total', { total })}
           </span>
@@ -604,7 +635,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
             {t('searchTable.pageInfo', { page, totalPages })}
           </span>
           {showPageJumper && (
-            <div className="flex items-center gap-1">
+            <div className="hidden items-center gap-1 sm:flex">
               <span className="text-[var(--muted-foreground)]">{t('searchTable.jumpTo')}</span>
               <input
                 type="number"

@@ -39,14 +39,13 @@ async function writeToClipboard(text: string): Promise<boolean> {
   textarea.style.opacity = "0";
   document.body.appendChild(textarea);
   textarea.select();
-  let ok = false;
   try {
-    ok = document.execCommand("copy");
+    return document.execCommand("copy");
   } catch {
-    ok = false;
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
   }
-  document.body.removeChild(textarea);
-  return ok;
 }
 
 export type CopyableTextVariant = "inline" | "block" | "card";

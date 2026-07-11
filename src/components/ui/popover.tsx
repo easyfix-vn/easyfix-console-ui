@@ -1,6 +1,7 @@
 "use client";
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import { XIcon } from "lucide-react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -95,9 +96,24 @@ export function PopoverPopup({
 }
 
 export function PopoverClose({
+  "aria-label": ariaLabel = "Close",
+  children,
+  className,
   ...props
 }: PopoverPrimitive.Close.Props): React.ReactElement {
-  return <PopoverPrimitive.Close data-slot="popover-close" {...props} />;
+  return (
+    <PopoverPrimitive.Close
+      aria-label={ariaLabel}
+      className={cn(
+        "inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-64 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        className,
+      )}
+      data-slot="popover-close"
+      {...props}
+    >
+      {children ?? <XIcon aria-hidden="true" />}
+    </PopoverPrimitive.Close>
+  );
 }
 
 export function PopoverTitle({
@@ -106,7 +122,7 @@ export function PopoverTitle({
 }: PopoverPrimitive.Title.Props): React.ReactElement {
   return (
     <PopoverPrimitive.Title
-      className={cn("font-semibold text-lg leading-none", className)}
+      className={cn("font-semibold text-base leading-6", className)}
       data-slot="popover-title"
       {...props}
     />
@@ -119,7 +135,10 @@ export function PopoverDescription({
 }: PopoverPrimitive.Description.Props): React.ReactElement {
   return (
     <PopoverPrimitive.Description
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn(
+        "[&:not(:first-child)]:mt-1 text-muted-foreground text-sm leading-5",
+        className,
+      )}
       data-slot="popover-description"
       {...props}
     />

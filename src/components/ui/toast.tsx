@@ -9,7 +9,6 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 import { useMemo } from "react";
-import type { CSSProperties } from "react";
 import type React from "react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -61,51 +60,6 @@ function getToastPosition(
   return data?.position ?? defaultPosition;
 }
 
-/**
- * 用主题 token（--success / --destructive 等）混色，不依赖 tailwind 默认 emerald/sky 扫描；
- * 文档站 dev 只 @source dist 时原先 data-[type]:bg-emerald-50 不会进 CSS，导致「完全没有颜色」。
- */
-function toastSurfaceStyle(type: string | undefined): CSSProperties | undefined {
-  if (!type || !(type in TOAST_ICONS)) return undefined;
-  const card = "var(--card)";
-  const border = "var(--border)";
-  const mixBg = (c: string, p: number): CSSProperties => ({
-    backgroundColor: `color-mix(in oklab, ${c} ${p}%, ${card})`,
-  });
-  const mixBorder = (c: string, p: number): CSSProperties => ({
-    borderColor: `color-mix(in oklab, ${c} ${p}%, ${border})`,
-  });
-  switch (type) {
-    case "success":
-      return {
-        ...mixBg("var(--success)", 18),
-        ...mixBorder("var(--success)", 38),
-      };
-    case "error":
-      return {
-        ...mixBg("var(--destructive)", 16),
-        ...mixBorder("var(--destructive)", 42),
-      };
-    case "warning":
-      return {
-        ...mixBg("var(--warning)", 18),
-        ...mixBorder("var(--warning)", 40),
-      };
-    case "info":
-      return {
-        ...mixBg("var(--info)", 17),
-        ...mixBorder("var(--info)", 38),
-      };
-    case "loading":
-      return {
-        backgroundColor: `color-mix(in oklab, var(--muted) 65%, ${card})`,
-        borderColor: border,
-      };
-    default:
-      return undefined;
-  }
-}
-
 function toastIconClass(type: string | undefined): string {
   switch (type) {
     case "success":
@@ -124,8 +78,20 @@ function toastIconClass(type: string | undefined): string {
 }
 
 function toastTitleClass(type: string | undefined): string {
-  if (!type || !(type in TOAST_ICONS)) return "";
-  return "text-card-foreground";
+  switch (type) {
+    case "success":
+      return "text-success";
+    case "error":
+      return "text-destructive";
+    case "warning":
+      return "text-warning";
+    case "info":
+      return "text-info";
+    case "loading":
+      return "text-muted-foreground";
+    default:
+      return "text-card-foreground";
+  }
 }
 
 function toastDescriptionClass(type: string | undefined): string {
@@ -183,9 +149,8 @@ function Toasts({
                 return (
                   <Toast.Root
                     key={toast.id}
-                    style={toastSurfaceStyle(toast.type)}
                     className={cn(
-                      "absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full select-none rounded-lg border bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(1%*max(0,var(--toast-index,0))))] not-dark:bg-clip-padding text-popover-foreground shadow-lg/5 [transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s,background-color_.5s] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] data-expanded:bg-popover dark:bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(6%*max(0,var(--toast-index,0))))] dark:data-expanded:bg-popover dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+                      "absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full select-none rounded-lg border border-border bg-card not-dark:bg-clip-padding text-card-foreground shadow-lg/5 [transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] data-expanded:bg-card dark:data-expanded:bg-card dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
                       "data-[position*=right]:right-0 data-[position*=right]:left-auto",
                       "data-[position*=left]:right-auto data-[position*=left]:left-0",
                       "data-[position*=center]:right-0 data-[position*=center]:left-0",
@@ -296,9 +261,8 @@ function AnchoredToasts({
               toast={toast}
             >
               <Toast.Root
-                style={toastSurfaceStyle(toast.type)}
                 className={cn(
-                  "relative text-balance border bg-popover not-dark:bg-clip-padding text-popover-foreground text-xs transition-[scale,opacity] before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:scale-98 data-starting-style:scale-98 data-ending-style:opacity-0 data-starting-style:opacity-0 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+                  "relative text-balance border border-border bg-card not-dark:bg-clip-padding text-card-foreground text-xs transition-[scale,opacity] before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:scale-98 data-starting-style:scale-98 data-ending-style:opacity-0 data-starting-style:opacity-0 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
                   tooltipStyle
                     ? "rounded-md shadow-md/5 before:rounded-[calc(var(--radius-md)-1px)]"
                     : "rounded-lg shadow-lg/5 before:rounded-[calc(var(--radius-lg)-1px)]",
@@ -310,10 +274,7 @@ function AnchoredToasts({
                 {tooltipStyle ? (
                   <Toast.Content className="pointer-events-auto px-2 py-1">
                     <Toast.Title
-                      className={cn(
-                        "text-popover-foreground",
-                        toastTitleClass(toast.type),
-                      )}
+                      className={toastTitleClass(toast.type)}
                       data-slot="toast-title"
                     />
                   </Toast.Content>

@@ -3,4 +3,5 @@ export {
   defaultEasyLocales,
   type EasyLocaleOption,
   type EasyLocaleSwitchProps,
+  type EasyLocaleSwitchSize,
 } from "./EasyLocaleSwitch";

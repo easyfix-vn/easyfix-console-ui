@@ -5,12 +5,18 @@ import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import {
+  CheckIcon,
   ChevronDownIcon,
+  ChevronRightIcon,
   ChevronsUpDownIcon,
   ChevronUpIcon,
+  XIcon,
 } from "lucide-react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverPopup, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 /* ------------------------------------------------------------------ */
 /* value → label：从 children 中自动提取 items 映射                       */
@@ -240,7 +246,7 @@ export function SelectItem({
     <SelectPrimitive.Item
       value={value}
       className={cn(
-        "grid min-h-8 in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm py-1 ps-2 pe-4 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-64 sm:min-h-7 sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "grid min-h-8 in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 whitespace-nowrap rounded-sm py-1 ps-2 pe-4 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-64 sm:min-h-7 sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       data-slot="select-item"
@@ -314,6 +320,454 @@ export function SelectGroupLabel(
       data-slot="select-group-label"
       {...props}
     />
+  );
+}
+
+export type SelectOption<Value extends string = string> = {
+  value: Value;
+  label: React.ReactNode;
+  disabled?: boolean;
+  searchText?: string;
+  keywords?: string[];
+  group?: string;
+};
+
+export type SearchableSelectFilter<Value extends string = string> = (
+  option: SelectOption<Value>,
+  query: string,
+) => boolean;
+
+export interface SearchableSelectProps<Value extends string = string>
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange" | "defaultValue"> {
+  value?: Value | null;
+  defaultValue?: Value | null;
+  onValueChange?: (value: Value | null, option?: SelectOption<Value>) => void;
+  options: SelectOption<Value>[];
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyText?: React.ReactNode;
+  filter?: SearchableSelectFilter<Value>;
+  disabled?: boolean;
+  clearable?: boolean;
+  size?: VariantProps<typeof selectTriggerVariants>["size"];
+  startAddon?: React.ReactNode;
+}
+
+function optionToSearchText<Value extends string>(
+  option: SelectOption<Value>,
+): string {
+  return [
+    option.value,
+    option.searchText,
+    typeof option.label === "string" || typeof option.label === "number"
+      ? String(option.label)
+      : undefined,
+    ...(option.keywords ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function defaultSearchableSelectFilter<Value extends string>(
+  option: SelectOption<Value>,
+  query: string,
+): boolean {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return optionToSearchText(option).includes(normalizedQuery);
+}
+
+export function SearchableSelect<Value extends string = string>({
+  value,
+  defaultValue = null,
+  onValueChange,
+  options,
+  placeholder = "请选择",
+  searchPlaceholder = "搜索...",
+  emptyText = "无匹配结果",
+  filter = defaultSearchableSelectFilter,
+  disabled = false,
+  clearable = false,
+  size = "default",
+  startAddon,
+  className,
+  ...props
+}: SearchableSelectProps<Value>): React.ReactElement {
+  const isControlled = value !== undefined;
+  const [internalValue, setInternalValue] = React.useState<Value | null>(
+    defaultValue,
+  );
+  const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  const currentValue = isControlled ? value : internalValue;
+  const selectedOption = React.useMemo(
+    () => options.find((option) => option.value === currentValue),
+    [currentValue, options],
+  );
+  const filteredOptions = React.useMemo(
+    () => options.filter((option) => filter(option, query)),
+    [filter, options, query],
+  );
+  const groupedOptions = React.useMemo(() => {
+    const groups = new Map<string, SelectOption<Value>[]>();
+
+    filteredOptions.forEach((option) => {
+      const group = option.group ?? "";
+      groups.set(group, [...(groups.get(group) ?? []), option]);
+    });
+
+    return Array.from(groups.entries());
+  }, [filteredOptions]);
+
+  const commitValue = React.useCallback(
+    (nextValue: Value | null, option?: SelectOption<Value>) => {
+      if (!isControlled) {
+        setInternalValue(nextValue);
+      }
+      onValueChange?.(nextValue, option);
+    },
+    [isControlled, onValueChange],
+  );
+
+  return (
+    <div className={cn("w-full", className)} data-slot="searchable-select" {...props}>
+      <Popover
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) {
+            setQuery("");
+          }
+        }}
+      >
+        <PopoverTrigger
+          disabled={disabled}
+          render={
+            <button
+              className={cn(
+                selectTriggerVariants({ size }),
+                "min-w-0",
+                !selectedOption && "text-muted-foreground",
+              )}
+              type="button"
+            />
+          }
+        >
+          {startAddon && <span className="-ms-0.5 opacity-80">{startAddon}</span>}
+          <span className="min-w-0 flex-1 truncate">
+            {selectedOption?.label ?? placeholder}
+          </span>
+          {clearable && currentValue && !disabled ? (
+            <span
+              className="-me-1 inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                commitValue(null);
+              }}
+              role="button"
+              tabIndex={-1}
+            >
+              <XIcon className="size-4" />
+            </span>
+          ) : (
+            <ChevronsUpDownIcon className={selectTriggerIconClassName} />
+          )}
+        </PopoverTrigger>
+        <PopoverPopup
+          align="start"
+          className="w-(--anchor-width) min-w-56 p-0"
+          viewportClassName="p-0 [--viewport-inline-padding:0px]"
+        >
+          <div className="border-b p-2">
+            <Input
+              inputClassName="!ps-2"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={searchPlaceholder}
+              size="sm"
+              value={query}
+            />
+          </div>
+          <ScrollArea className="max-h-72" scrollbarGutter scrollFade>
+            <div className="p-1">
+              {filteredOptions.length === 0 ? (
+                <div className="px-3 py-6 text-center text-muted-foreground text-sm">
+                  {emptyText}
+                </div>
+              ) : (
+                groupedOptions.map(([group, groupOptions]) => (
+                  <div key={group || "__default"} className="[[data-slot=select-search-group]+&]:mt-1.5" data-slot="select-search-group">
+                    {group && (
+                      <div className="px-2 py-1.5 font-medium text-muted-foreground text-xs">
+                        {group}
+                      </div>
+                    )}
+                    {groupOptions.map((option) => {
+                      const selected = option.value === currentValue;
+                      return (
+                        <button
+                          key={option.value}
+                          className={cn(
+                            "grid min-h-8 w-full cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm py-1 ps-2 pe-4 text-start text-base outline-none transition-colors sm:min-h-7 sm:text-sm",
+                            option.disabled
+                              ? "pointer-events-none opacity-64"
+                              : "hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground",
+                          )}
+                          disabled={option.disabled}
+                          onClick={() => {
+                            commitValue(option.value, option);
+                            setOpen(false);
+                            setQuery("");
+                          }}
+                          type="button"
+                        >
+                          <span className="col-start-1">
+                            {selected && <CheckIcon className="size-4" />}
+                          </span>
+                          <span className="col-start-2 min-w-0 truncate">
+                            {option.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </PopoverPopup>
+      </Popover>
+    </div>
+  );
+}
+
+export type CascaderOption<Value extends string = string> = {
+  value: Value;
+  label: React.ReactNode;
+  disabled?: boolean;
+  children?: CascaderOption<Value>[];
+};
+
+export interface CascaderProps<Value extends string = string>
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange" | "defaultValue"> {
+  value?: Value[];
+  defaultValue?: Value[];
+  onValueChange?: (
+    value: Value[],
+    selectedOptions: CascaderOption<Value>[],
+  ) => void;
+  options: CascaderOption<Value>[];
+  placeholder?: string;
+  separator?: React.ReactNode;
+  disabled?: boolean;
+  changeOnSelect?: boolean;
+  size?: VariantProps<typeof selectTriggerVariants>["size"];
+}
+
+function findCascaderPath<Value extends string>(
+  options: CascaderOption<Value>[],
+  path: Value[] | undefined,
+): CascaderOption<Value>[] {
+  if (!path?.length) {
+    return [];
+  }
+
+  const result: CascaderOption<Value>[] = [];
+  let currentOptions = options;
+
+  for (const value of path) {
+    const option = currentOptions.find((item) => item.value === value);
+    if (!option) {
+      break;
+    }
+    result.push(option);
+    currentOptions = option.children ?? [];
+  }
+
+  return result;
+}
+
+export function Cascader<Value extends string = string>({
+  value,
+  defaultValue = [],
+  onValueChange,
+  options,
+  placeholder = "请选择",
+  separator = " / ",
+  disabled = false,
+  changeOnSelect = false,
+  size = "default",
+  className,
+  ...props
+}: CascaderProps<Value>): React.ReactElement {
+  const isControlled = value !== undefined;
+  const [internalValue, setInternalValue] = React.useState<Value[]>(defaultValue);
+  const [open, setOpen] = React.useState(false);
+  const currentValue = isControlled ? value : internalValue;
+  const selectedOptions = React.useMemo(
+    () => findCascaderPath(options, currentValue),
+    [currentValue, options],
+  );
+  const [activePath, setActivePath] = React.useState<Value[]>(currentValue ?? []);
+
+  const handleOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      if (nextOpen) {
+        setActivePath(currentValue ?? []);
+      }
+      setOpen(nextOpen);
+    },
+    [currentValue],
+  );
+
+  const activeOptions = React.useMemo(
+    () => findCascaderPath(options, activePath),
+    [activePath, options],
+  );
+  const columns = React.useMemo(() => {
+    const nextColumns: CascaderOption<Value>[][] = [options];
+
+    activeOptions.forEach((option) => {
+      if (option.children?.length) {
+        nextColumns.push(option.children);
+      }
+    });
+
+    return nextColumns;
+  }, [activeOptions, options]);
+
+  const commitValue = React.useCallback(
+    (nextValue: Value[], nextOptions: CascaderOption<Value>[]) => {
+      if (!isControlled) {
+        setInternalValue(nextValue);
+      }
+      onValueChange?.(nextValue, nextOptions);
+    },
+    [isControlled, onValueChange],
+  );
+
+  return (
+    <div className={cn("w-full", className)} data-slot="cascader" {...props}>
+      <Popover open={open} onOpenChange={handleOpenChange}>
+        <PopoverTrigger
+          disabled={disabled}
+          render={
+            <button
+              className={cn(
+                selectTriggerVariants({ size }),
+                "min-w-0",
+                selectedOptions.length === 0 && "text-muted-foreground",
+              )}
+              type="button"
+            />
+          }
+        >
+          <span className="min-w-0 flex-1 truncate">
+            {selectedOptions.length > 0
+              ? selectedOptions.map((option, index) => (
+                  <React.Fragment key={option.value}>
+                    {index > 0 && (
+                      <span className="mx-1 text-muted-foreground">
+                        {separator}
+                      </span>
+                    )}
+                    <span>{option.label}</span>
+                  </React.Fragment>
+                ))
+              : placeholder}
+          </span>
+          <ChevronsUpDownIcon className={selectTriggerIconClassName} />
+        </PopoverTrigger>
+        <PopoverPopup
+          align="start"
+          className="w-max max-w-[calc(100vw-2rem)] overflow-visible p-0"
+          viewportClassName="p-0 [--viewport-inline-padding:0px]"
+        >
+          <div
+            className="flex max-h-80 max-w-[calc(100vw-2rem)] overflow-hidden bg-popover"
+            data-slot="cascader-panel"
+            style={{
+              width: `min(calc(100vw - 2rem), ${Math.max(360, columns.length * 192)}px)`,
+            }}
+          >
+            {columns.map((column, columnIndex) => (
+              <div
+                key={activePath.slice(0, columnIndex).join("/") || "root"}
+                className={cn(
+                  "min-w-0 flex-1 basis-0",
+                  columnIndex > 0 && "border-s border-border",
+                )}
+                data-slot="cascader-column"
+              >
+                <ScrollArea className="max-h-80" scrollbarGutter scrollFade>
+                  <div className="p-1">
+                    {column.length === 0 ? (
+                      <div className="px-3 py-6 text-center text-muted-foreground text-sm">
+                        暂无选项
+                      </div>
+                    ) : (
+                      column.map((option) => {
+                        const selected = activePath[columnIndex] === option.value;
+                        const nextPath = [
+                          ...activePath.slice(0, columnIndex),
+                          option.value,
+                        ];
+                        const nextOptions = findCascaderPath(options, nextPath);
+                        const hasChildren = Boolean(option.children?.length);
+
+                        return (
+                          <button
+                            key={option.value}
+                            className={cn(
+                              "group flex min-h-8 w-full cursor-default items-center gap-1.5 rounded-md px-2 py-1 text-start text-base outline-none transition-colors sm:min-h-7 sm:text-sm",
+                              selected && "bg-accent text-accent-foreground",
+                              option.disabled
+                                ? "pointer-events-none opacity-64"
+                                : "hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground",
+                            )}
+                            disabled={option.disabled}
+                            onFocus={() => {
+                              setActivePath(nextPath);
+                            }}
+                            onMouseEnter={() => {
+                              setActivePath(nextPath);
+                            }}
+                            onClick={() => {
+                              setActivePath(nextPath);
+                              if (changeOnSelect || !hasChildren) {
+                                commitValue(nextPath, nextOptions);
+                              }
+                              if (!hasChildren) {
+                                setOpen(false);
+                              }
+                            }}
+                            type="button"
+                          >
+                            <span className="min-w-0 flex-1 truncate">
+                              {option.label}
+                            </span>
+                            {hasChildren ? (
+                              <ChevronRightIcon className="size-4 opacity-70 transition-transform group-hover:translate-x-0.5" />
+                            ) : selected ? (
+                              <CheckIcon className="size-4" />
+                            ) : null}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            ))}
+          </div>
+        </PopoverPopup>
+      </Popover>
+    </div>
   );
 }
 

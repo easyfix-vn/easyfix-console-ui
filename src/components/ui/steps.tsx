@@ -184,6 +184,6 @@ export function Steps({
   );
 }
 
-export function StepItem(_props: StepItemProps): React.ReactElement {
+export function StepItem(): React.ReactElement {
   return <></>;
 }

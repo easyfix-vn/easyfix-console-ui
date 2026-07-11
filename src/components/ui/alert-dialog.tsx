@@ -127,9 +127,8 @@ export function AlertDialogFooter({
   return (
     <div
       className={cn(
-        "flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end sm:rounded-b-[calc(var(--radius-2xl)-1px)]",
-        variant === "default" && "border-t bg-muted/40 py-3",
-        variant === "bare" && "pb-6",
+        "flex flex-col-reverse gap-2 px-6 py-4 sm:flex-row sm:justify-end sm:rounded-b-[calc(var(--radius-2xl)-1px)]",
+        variant === "default" && "border-t bg-muted/40",
         className,
       )}
       data-slot="alert-dialog-footer"

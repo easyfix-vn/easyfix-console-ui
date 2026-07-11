@@ -5,13 +5,24 @@ import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+export type RadioGroupOrientation = "vertical" | "horizontal";
+export type RadioGroupProps = RadioGroupPrimitive.Props & {
+  orientation?: RadioGroupOrientation;
+};
+
 export function RadioGroup({
   className,
+  orientation = "vertical",
   ...props
-}: RadioGroupPrimitive.Props): React.ReactElement {
+}: RadioGroupProps): React.ReactElement {
   return (
     <RadioGroupPrimitive
-      className={cn("flex flex-col gap-3", className)}
+      className={cn(
+        orientation === "horizontal"
+          ? "flex flex-row flex-wrap items-center gap-x-4 gap-y-2"
+          : "flex flex-col gap-3",
+        className,
+      )}
       data-slot="radio-group"
       {...props}
     />

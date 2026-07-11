@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 
+export type SearchMode = 'auto' | 'manual'
+
 // 搜索表单字段配置。业务页面只需要描述字段，不需要关心表单布局。
 export type SearchFieldDef = {
   key: string
