@@ -8,6 +8,7 @@ import {
   getDateTimeZoneTag,
   getSystemTimeZone,
   getTimeZoneOptions,
+  getTimeZoneOptionTag,
   normalizeDateTimeZone,
   type TimeZoneOption,
 } from "@/lib/date-time-zone";
@@ -99,7 +100,7 @@ export function TimezoneSelect({
 
     const browserOffset = getDateTimeZoneTag(browserTimeZone);
     return resolvedOptions.find(
-      (option) => getDateTimeZoneTag(option.value) === browserOffset,
+      (option) => getTimeZoneOptionTag(option) === browserOffset,
     )?.value;
   }, [browserTimeZone, resolvedOptions]);
   const selectedOption = resolvedOptions.find(
@@ -108,6 +109,9 @@ export function TimezoneSelect({
   const selectedName = selectedOption
     ? getOptionName(selectedOption, t)
     : resolvedValue;
+  const selectedTag = selectedOption
+    ? getTimeZoneOptionTag(selectedOption)
+    : getDateTimeZoneTag(resolvedValue);
   const currentTimeZoneLabel = t("timeZone.current");
 
   return (
@@ -139,7 +143,7 @@ export function TimezoneSelect({
           <SelectValue placeholder={t("timeZone.placeholder")}>
             <span className="inline-flex min-w-0 items-center gap-1.5">
               <span className="shrink-0 font-mono">
-                {getDateTimeZoneTag(resolvedValue)}
+                {selectedTag}
               </span>
               <span className="min-w-0 truncate text-muted-foreground">
                 {selectedName}
@@ -153,9 +157,10 @@ export function TimezoneSelect({
         >
           {resolvedOptions.map((option) => {
             const optionName = getOptionName(option, t);
+            const optionTag = getTimeZoneOptionTag(option);
             const isBrowserTimeZone = option.value === browserOptionValue;
             const itemLabel = [
-              getDateTimeZoneTag(option.value),
+              optionTag,
               optionName,
               isBrowserTimeZone ? currentTimeZoneLabel : undefined,
             ]
@@ -170,7 +175,7 @@ export function TimezoneSelect({
               >
                 <span className="flex w-full min-w-0 items-center gap-3 whitespace-nowrap">
                   <span className="w-20 shrink-0 font-mono">
-                    {getDateTimeZoneTag(option.value)}
+                    {optionTag}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-muted-foreground">
                     {optionName}

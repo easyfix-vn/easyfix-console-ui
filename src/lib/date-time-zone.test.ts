@@ -6,6 +6,7 @@ import {
   DEFAULT_TIME_ZONE_OPTIONS,
   getDateTimeZoneTag,
   getTimeZoneOptions,
+  getTimeZoneOptionTag,
   toZonedCalendarDate,
 } from "./date-time-zone";
 
@@ -23,6 +24,24 @@ describe("date-time-zone", () => {
   it("formats timezone tags as UTC offsets", () => {
     expect(getDateTimeZoneTag("Asia/Ho_Chi_Minh")).toBe("UTC+07");
     expect(getDateTimeZoneTag("Asia/Shanghai")).toBe("UTC+08");
+    expect(getDateTimeZoneTag("Asia/Karachi")).toBe("UTC+05");
+  });
+
+  it("formats half-hour and quarter-hour timezone offsets", () => {
+    const date = new Date("2026-07-11T12:00:00Z");
+
+    expect(getDateTimeZoneTag("Pacific/Marquesas", date)).toBe("UTC-09:30");
+    expect(getDateTimeZoneTag("Australia/Eucla", date)).toBe("UTC+08:45");
+    expect(getDateTimeZoneTag("Asia/Kathmandu", date)).toBe("UTC+05:45");
+  });
+
+  it("uses the declared option offset before dynamic timezone calculation", () => {
+    expect(
+      getTimeZoneOptionTag({ value: "Asia/Shanghai", offset: "UTC+08" }),
+    ).toBe("UTC+08");
+    expect(
+      getTimeZoneOptionTag({ value: "Asia/Karachi", offset: "UTC+05" }),
+    ).toBe("UTC+05");
   });
 
   it("provides representative IANA zones from UTC-12 through UTC+14", () => {

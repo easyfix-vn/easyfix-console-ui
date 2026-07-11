@@ -130,7 +130,7 @@ export function getTimeZoneOptions(
   if (!options?.length) {
     const currentOffset = getDateTimeZoneTag(currentTimeZone);
     const sameOffsetIndex = baseOptions.findIndex(
-      (option) => getDateTimeZoneTag(option.value) === currentOffset,
+      (option) => getTimeZoneOptionTag(option) === currentOffset,
     );
 
     if (sameOffsetIndex >= 0) {
@@ -152,6 +152,13 @@ export function getDateTimeZoneTag(timeZone: string, date = new Date()): string 
   return getDateTimeZoneOffsetLabel(timeZone, date);
 }
 
+export function getTimeZoneOptionTag(
+  option: Pick<TimeZoneOption, "offset" | "value">,
+  date = new Date(),
+): string {
+  return option.offset ?? getDateTimeZoneTag(option.value, date);
+}
+
 function formatOffsetMinutes(offsetMinutes: number): string {
   const sign = offsetMinutes >= 0 ? "+" : "-";
   const absoluteOffset = Math.abs(offsetMinutes);
@@ -165,10 +172,48 @@ function formatOffsetMinutes(offsetMinutes: number): string {
   return `UTC${sign}${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+function getIntlOffsetMinutes(timeZone: string, date: Date): number | undefined {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(date);
+    const values = new Map(parts.map((part) => [part.type, part.value]));
+    const year = Number(values.get("year"));
+    const month = Number(values.get("month"));
+    const day = Number(values.get("day"));
+    const hour = Number(values.get("hour")) % 24;
+    const minute = Number(values.get("minute"));
+    const second = Number(values.get("second"));
+
+    if ([year, month, day, hour, minute, second].some(Number.isNaN)) {
+      return undefined;
+    }
+
+    return Math.round(
+      (Date.UTC(year, month - 1, day, hour, minute, second) - date.getTime()) /
+        60000,
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 export function getDateTimeZoneOffsetLabel(
   timeZone: string,
   date = new Date(),
 ): string {
+  const intlOffset = getIntlOffsetMinutes(timeZone, date);
+  if (intlOffset !== undefined) {
+    return formatOffsetMinutes(intlOffset);
+  }
+
   try {
     return formatOffsetMinutes(dayjs(date).tz(timeZone).utcOffset());
   } catch {
