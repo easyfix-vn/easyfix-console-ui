@@ -3,6 +3,7 @@
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { mergeProps } from "@base-ui/react/merge-props";
 import * as React from "react";
+import { isOverMaxLength, syncMaxLengthValidity } from "@/lib/max-length";
 import { cn } from "@/lib/utils";
 
 export type TextareaProps = React.ComponentPropsWithoutRef<"textarea"> &
@@ -17,10 +18,49 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       className,
       size = "default",
       unstyled = false,
+      maxLength,
+      value: valueProp,
+      defaultValue,
+      onChange,
+      "aria-invalid": ariaInvalid,
       ...props
     },
     ref,
   ): React.ReactElement {
+  const isControlled = valueProp !== undefined;
+  const [innerValue, setInnerValue] = React.useState<string>(
+    defaultValue != null ? String(defaultValue) : "",
+  );
+  const value = isControlled ? String(valueProp ?? "") : innerValue;
+  const overMaxLength = isOverMaxLength(value, maxLength);
+  const innerRef = React.useRef<HTMLTextAreaElement | null>(null);
+
+  React.useImperativeHandle(
+    ref,
+    () => innerRef.current as HTMLTextAreaElement,
+  );
+
+  React.useEffect(() => {
+    if (innerRef.current) {
+      syncMaxLengthValidity(innerRef.current, value, maxLength);
+    }
+  }, [maxLength, value]);
+
+  const handleChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      syncMaxLengthValidity(
+        event.currentTarget,
+        event.currentTarget.value,
+        maxLength,
+      );
+      if (!isControlled) {
+        setInnerValue(event.currentTarget.value);
+      }
+      onChange?.(event);
+    },
+    [isControlled, maxLength, onChange],
+  );
+
   return (
     <span
       className={
@@ -34,9 +74,9 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       data-slot="textarea-control"
     >
       <FieldPrimitive.Control
-        ref={ref}
-        value={props.value}
-        defaultValue={props.defaultValue}
+        ref={innerRef}
+        value={isControlled ? value : undefined}
+        defaultValue={isControlled ? undefined : defaultValue}
         disabled={props.disabled}
         id={props.id}
         name={props.name}
@@ -50,7 +90,14 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                 "min-h-18.5 py-[calc(--spacing(2)-1px)] max-sm:min-h-21.5",
             )}
             data-slot="textarea"
-            {...mergeProps(defaultProps, props)}
+            {...mergeProps(defaultProps, {
+              ...props,
+              value: isControlled ? value : undefined,
+              defaultValue: isControlled ? undefined : defaultValue,
+              maxLength: undefined,
+              "aria-invalid": overMaxLength ? true : ariaInvalid,
+              onChange: handleChange,
+            })}
           />
         )}
       />

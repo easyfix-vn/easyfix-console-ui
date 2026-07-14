@@ -30,6 +30,8 @@ export * from "./components/EasyTimeText";
 export * from "./components/EasyTreeSelectPanel";
 export * from "./components/EasyGlobalPhoneInput";
 export * from "./components/EasyGlobalPhoneText";
+export * from "./components/EasyI18nInput";
+export * from "./components/ImageUpload";
 export * from "./components/NumberFlow";
 export {
   Accordion,

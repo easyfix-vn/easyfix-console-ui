@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, XIcon } from "lucide-react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -28,6 +28,7 @@ export type DatePickerProps = {
   onTimestampChange?: (timestamp: number | undefined) => void;
   placeholder?: string;
   disabled?: boolean;
+  clearable?: boolean;
   className?: string;
   /** IANA 时区；未传时读取 ConfigProvider.timeZone 或浏览器时区 */
   timeZone?: string;
@@ -49,6 +50,7 @@ export function DatePicker({
   onTimestampChange,
   placeholder,
   disabled = false,
+  clearable = true,
   className,
   timeZone,
   defaultTimeZone,
@@ -138,6 +140,16 @@ export function DatePicker({
     emitValue(pendingDate);
     setOpen(false);
   }, [emitValue, pendingDate]);
+  const handleClear = React.useCallback(
+    (event: React.MouseEvent<HTMLSpanElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingDate(undefined);
+      emitValue(undefined);
+      setOpen(false);
+    },
+    [emitValue],
+  );
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -160,11 +172,22 @@ export function DatePicker({
             ? formatter(calendarValue)
             : placeholder ?? t("datePicker.placeholder")}
         </span>
+        {clearable && value && !disabled && (
+          <span
+            aria-label={t("actions.clear")}
+            className="-me-1 inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={handleClear}
+            role="button"
+            tabIndex={-1}
+          >
+            <XIcon className="size-4" />
+          </span>
+        )}
         {showTimeZone && <TimeZoneTag timeZone={resolvedTimeZone} />}
       </PopoverTrigger>
       <PopoverPopup
         align="start"
-        className="w-auto"
+        className="w-auto max-w-[calc(100vw-1rem)]"
         viewportClassName="!p-0 [--viewport-inline-padding:0px]"
       >
         {showTimeZone && (
@@ -178,6 +201,7 @@ export function DatePicker({
           </div>
         )}
         <Calendar
+          className="w-full max-w-full"
           defaultMonth={activeCalendarValue ?? calendarToday}
           mode="single"
           selected={activeCalendarValue}
@@ -190,7 +214,7 @@ export function DatePicker({
             );
           }}
         />
-        <div className="flex items-center justify-end border-t border-border px-3 py-2">
+        <div className="sticky bottom-0 z-1 flex items-center justify-end border-t border-border bg-popover px-3 py-2">
           <Button
             disabled={disabled || !pendingDate}
             onClick={commitPendingDate}

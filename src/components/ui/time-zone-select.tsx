@@ -14,11 +14,8 @@ import {
   type TimeZoneOption,
 } from "@/lib/date-time-zone";
 import {
-  Select,
-  SelectItem,
-  SelectPopup,
-  SelectTrigger,
-  SelectValue,
+  SearchableSelect,
+  type SelectOption,
 } from "@/components/ui/select";
 
 export type TimezoneSelectProps = {
@@ -61,6 +58,41 @@ function getOptionName(option: TimeZoneOption, t: (key: string) => string): stri
   return option.label ?? option.description ?? option.value;
 }
 
+type TimeZoneGroupKey =
+  | "africa"
+  | "america"
+  | "asia"
+  | "europe"
+  | "oceania"
+  | "other";
+
+const TIME_ZONE_GROUP_ORDER: Record<TimeZoneGroupKey, number> = {
+  asia: 0,
+  europe: 1,
+  africa: 2,
+  america: 3,
+  oceania: 4,
+  other: 5,
+};
+
+function getTimeZoneGroupKey(timeZone: IanaTimeZone): TimeZoneGroupKey {
+  switch (timeZone.split("/")[0]) {
+    case "Africa":
+      return "africa";
+    case "America":
+      return "america";
+    case "Asia":
+      return "asia";
+    case "Europe":
+      return "europe";
+    case "Australia":
+    case "Pacific":
+      return "oceania";
+    default:
+      return "other";
+  }
+}
+
 export function TimezoneSelect({
   value,
   defaultValue,
@@ -83,29 +115,87 @@ export function TimezoneSelect({
     }
   }, [configTimeZone, defaultValue, value]);
 
-  const resolvedOptions = React.useMemo(
-    () => getTimeZoneOptions(options, resolvedValue),
-    [options, resolvedValue],
-  );
   const browserTimeZone = React.useMemo(
     () => normalizeDateTimeZone(getSystemTimeZone()),
     [],
   );
+  const resolvedOptions = React.useMemo(() => {
+    const nextOptions = getTimeZoneOptions(options, resolvedValue);
+
+    if (
+      options?.length ||
+      nextOptions.some((option) => option.value === browserTimeZone)
+    ) {
+      return nextOptions;
+    }
+
+    const browserOffset = getDateTimeZoneTag(browserTimeZone);
+    const sameOffsetIndex = nextOptions.findIndex(
+      (option) => getTimeZoneOptionTag(option) === browserOffset,
+    );
+
+    if (sameOffsetIndex >= 0) {
+      return nextOptions.map((option, index) =>
+        index === sameOffsetIndex
+          ? {
+              ...option,
+              value: browserTimeZone,
+              description: browserTimeZone,
+              nameKey: undefined,
+              label: undefined,
+            }
+          : option,
+      );
+    }
+
+    return [
+      { value: browserTimeZone, description: browserTimeZone },
+      ...nextOptions,
+    ];
+  }, [browserTimeZone, options, resolvedValue]);
   const browserOptionValue = resolvedOptions.some(
     (option) => option.value === browserTimeZone,
   )
     ? browserTimeZone
     : undefined;
-  const selectedOption = resolvedOptions.find(
-    (option) => option.value === resolvedValue,
-  );
-  const selectedName = selectedOption
-    ? getOptionName(selectedOption, t)
-    : resolvedValue;
-  const selectedTag = selectedOption
-    ? getTimeZoneOptionTag(selectedOption)
-    : getDateTimeZoneTag(resolvedValue);
   const currentTimeZoneLabel = t("timeZone.current");
+  const searchableOptions = React.useMemo<SelectOption<IanaTimeZone>[]>(
+    () =>
+      [...resolvedOptions]
+        .sort(
+          (left, right) =>
+            TIME_ZONE_GROUP_ORDER[getTimeZoneGroupKey(left.value)] -
+            TIME_ZONE_GROUP_ORDER[getTimeZoneGroupKey(right.value)],
+        )
+        .map((option) => {
+        const optionName = getOptionName(option, t);
+        const optionTag = getTimeZoneOptionTag(option);
+        const isBrowserTimeZone = option.value === browserOptionValue;
+        const group = t(
+          `timeZone.groups.${getTimeZoneGroupKey(option.value)}`,
+        );
+
+        return {
+          value: option.value,
+          group,
+          searchText: [optionTag, optionName, option.value, group].join(" "),
+          label: (
+            <span className="grid w-full min-w-0 grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-x-3 whitespace-nowrap">
+              <span className="font-mono">{optionTag}</span>
+              <span className="min-w-0 truncate text-muted-foreground">
+                {optionName}
+              </span>
+              {isBrowserTimeZone && (
+                <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  {currentTimeZoneLabel}
+                </span>
+              )}
+            </span>
+          ),
+        };
+        }),
+    [browserOptionValue, currentTimeZoneLabel, resolvedOptions, t],
+  );
 
   return (
     <div
@@ -117,7 +207,7 @@ export function TimezoneSelect({
           {label}
         </span>
       )}
-      <Select
+      <SearchableSelect
         value={resolvedValue}
         onValueChange={(nextValue) => {
           if (nextValue) {
@@ -127,63 +217,16 @@ export function TimezoneSelect({
             onValueChange?.(nextValue);
           }
         }}
+        options={searchableOptions}
+        placeholder={t("timeZone.placeholder")}
+        searchPlaceholder={t("timeZone.searchPlaceholder")}
+        emptyText={t("timeZone.emptyText")}
+        clearable={false}
         disabled={disabled}
-      >
-        <SelectTrigger
-          size="sm"
-          className="h-7 min-h-7 min-w-44 max-w-full flex-1 rounded-full bg-muted/60 px-2.5 text-xs leading-none shadow-none sm:min-h-7 [&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1"
-        >
-          <SelectValue placeholder={t("timeZone.placeholder")}>
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-              <span className="shrink-0 font-mono">
-                {selectedTag}
-              </span>
-              <span className="min-w-0 truncate text-muted-foreground">
-                {selectedName}
-              </span>
-            </span>
-          </SelectValue>
-        </SelectTrigger>
-        <SelectPopup
-          alignItemWithTrigger={false}
-          className="min-w-[min(34rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]"
-        >
-          {resolvedOptions.map((option) => {
-            const optionName = getOptionName(option, t);
-            const optionTag = getTimeZoneOptionTag(option);
-            const isBrowserTimeZone = option.value === browserOptionValue;
-            const itemLabel = [
-              optionTag,
-              optionName,
-              isBrowserTimeZone ? currentTimeZoneLabel : undefined,
-            ]
-              .filter(Boolean)
-              .join(" ");
-
-            return (
-              <SelectItem
-                key={option.value}
-                label={itemLabel}
-                value={option.value}
-              >
-                <span className="grid w-full min-w-0 grid-cols-[6rem_minmax(0,1fr)_auto] items-center gap-x-4 whitespace-nowrap">
-                  <span className="font-mono">
-                    {optionTag}
-                  </span>
-                  <span className="min-w-0 truncate text-muted-foreground">
-                    {optionName}
-                  </span>
-                  {isBrowserTimeZone && (
-                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                      {currentTimeZoneLabel}
-                    </span>
-                  )}
-                </span>
-              </SelectItem>
-            );
-          })}
-        </SelectPopup>
-      </Select>
+        popupClassName="min-w-[min(34rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]"
+        size="sm"
+        className="min-w-44 max-w-full flex-1 [&_[data-slot=popover-trigger]]:h-7 [&_[data-slot=popover-trigger]]:min-h-7 [&_[data-slot=popover-trigger]]:rounded-full [&_[data-slot=popover-trigger]]:bg-muted/60 [&_[data-slot=popover-trigger]]:px-2.5 [&_[data-slot=popover-trigger]]:text-xs [&_[data-slot=popover-trigger]]:leading-none [&_[data-slot=popover-trigger]]:shadow-none"
+      />
     </div>
   );
 }

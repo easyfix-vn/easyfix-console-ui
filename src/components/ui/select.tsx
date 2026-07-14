@@ -53,20 +53,115 @@ function extractSelectItems(
   return found ? items : undefined;
 }
 
-export function Select<Value = unknown>({
+type SelectRootProps<Value, Multiple extends boolean | undefined = false> =
+  SelectPrimitive.Root.Props<Value, Multiple>;
+
+type SelectValue<Value, Multiple extends boolean | undefined> =
+  SelectRootProps<Value, Multiple>["value"];
+
+type SelectContextValue = {
+  clearable: boolean;
+  disabled: boolean;
+  hasValue: boolean;
+  onClear: (event: React.MouseEvent<HTMLSpanElement>) => void;
+};
+
+const SelectContext = React.createContext<SelectContextValue | null>(null);
+
+export type SelectProps<
+  Value = unknown,
+  Multiple extends boolean | undefined = false,
+> = SelectRootProps<Value, Multiple> & {
+  clearable?: boolean;
+};
+
+export function Select<
+  Value = unknown,
+  Multiple extends boolean | undefined = false,
+>({
   items: itemsProp,
   children,
+  clearable = true,
+  value: valueProp,
+  defaultValue,
+  multiple,
+  disabled = false,
+  onValueChange,
   ...props
-}: SelectPrimitive.Root.Props<Value>): React.ReactElement {
+}: SelectProps<Value, Multiple>): React.ReactElement {
   const resolvedItems = React.useMemo(
     () => itemsProp ?? extractSelectItems(children),
     [itemsProp, children],
   );
+  const isControlled = valueProp !== undefined;
+  const [internalValue, setInternalValue] = React.useState<SelectValue<
+    Value,
+    Multiple
+  >>(valueProp ?? defaultValue ?? null);
+  const currentValue = isControlled ? valueProp : internalValue;
+
+  React.useEffect(() => {
+    if (isControlled) {
+      setInternalValue(valueProp);
+    }
+  }, [isControlled, valueProp]);
+
+  const handleValueChange: NonNullable<
+    SelectRootProps<Value, Multiple>["onValueChange"]
+  > = React.useCallback(
+    (nextValue, eventDetails) => {
+      setInternalValue(nextValue);
+      onValueChange?.(nextValue, eventDetails);
+    },
+    [onValueChange],
+  );
+
+  const handleClear = React.useCallback(
+    (event: React.MouseEvent<HTMLSpanElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const nextValue = (multiple ? [] : null) as Parameters<
+        NonNullable<SelectRootProps<Value, Multiple>["onValueChange"]>
+      >[0];
+      setInternalValue(nextValue);
+      onValueChange?.(
+        nextValue,
+        {
+          reason: "none",
+          event: event.nativeEvent,
+          cancel: () => undefined,
+          allowPropagation: () => undefined,
+          isCanceled: false,
+          isPropagationAllowed: false,
+          trigger: event.currentTarget,
+        } as Parameters<
+          NonNullable<SelectRootProps<Value, Multiple>["onValueChange"]>
+        >[1],
+      );
+    },
+    [multiple, onValueChange],
+  );
+
+  const hasValue = Array.isArray(currentValue)
+    ? currentValue.length > 0
+    : currentValue != null;
 
   return (
-    <SelectPrimitive.Root items={resolvedItems} {...props}>
-      {children}
-    </SelectPrimitive.Root>
+    <SelectContext.Provider
+      value={{ clearable, disabled, hasValue, onClear: handleClear }}
+    >
+      <SelectPrimitive.Root
+        items={resolvedItems}
+        multiple={multiple}
+        value={currentValue}
+        onValueChange={handleValueChange}
+        disabled={disabled}
+        {...props}
+      >
+        {children}
+      </SelectPrimitive.Root>
+    </SelectContext.Provider>
   );
 }
 
@@ -130,6 +225,15 @@ export function SelectTrigger({
   ...props
 }: SelectPrimitive.Trigger.Props &
   VariantProps<typeof selectTriggerVariants>): React.ReactElement {
+  const selectContext = React.useContext(SelectContext);
+  const stopTriggerInteraction = React.useCallback(
+    (event: React.SyntheticEvent<HTMLSpanElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    [],
+  );
+
   return (
     <SelectPrimitive.Trigger
       className={cn(selectTriggerVariants({ size }), className)}
@@ -137,9 +241,25 @@ export function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon data-slot="select-icon">
-        <ChevronsUpDownIcon className={selectTriggerIconClassName} />
-      </SelectPrimitive.Icon>
+      {selectContext?.clearable &&
+      selectContext.hasValue &&
+      !selectContext.disabled ? (
+        <span
+          aria-label="清空"
+          className="-me-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          onClick={selectContext.onClear}
+          onMouseDown={stopTriggerInteraction}
+          onPointerDown={stopTriggerInteraction}
+          role="button"
+          tabIndex={-1}
+        >
+          <XIcon className="size-4" />
+        </span>
+      ) : (
+        <SelectPrimitive.Icon data-slot="select-icon">
+          <ChevronsUpDownIcon className={selectTriggerIconClassName} />
+        </SelectPrimitive.Icon>
+      )}
     </SelectPrimitive.Trigger>
   );
 }
@@ -349,6 +469,7 @@ export interface SearchableSelectProps<Value extends string = string>
   filter?: SearchableSelectFilter<Value>;
   disabled?: boolean;
   clearable?: boolean;
+  popupClassName?: string;
   size?: VariantProps<typeof selectTriggerVariants>["size"];
   startAddon?: React.ReactNode;
 }
@@ -392,7 +513,8 @@ export function SearchableSelect<Value extends string = string>({
   emptyText = "无匹配结果",
   filter = defaultSearchableSelectFilter,
   disabled = false,
-  clearable = false,
+  clearable = true,
+  popupClassName,
   size = "default",
   startAddon,
   className,
@@ -464,6 +586,7 @@ export function SearchableSelect<Value extends string = string>({
           </span>
           {clearable && currentValue && !disabled ? (
             <span
+              aria-label="清空"
               className="-me-1 inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={(event) => {
                 event.preventDefault();
@@ -481,10 +604,10 @@ export function SearchableSelect<Value extends string = string>({
         </PopoverTrigger>
         <PopoverPopup
           align="start"
-          className="w-(--anchor-width) min-w-56 p-0"
+          className={cn("w-(--anchor-width) min-w-56 p-0", popupClassName)}
           viewportClassName="p-0 [--viewport-inline-padding:0px]"
         >
-          <div className="border-b p-2">
+          <div className="sticky top-0 z-10 border-b bg-popover p-2">
             <Input
               inputClassName="!ps-2"
               onChange={(event) => setQuery(event.target.value)}
@@ -493,7 +616,11 @@ export function SearchableSelect<Value extends string = string>({
               value={query}
             />
           </div>
-          <ScrollArea className="max-h-72" scrollbarGutter scrollFade>
+          <ScrollArea
+            className="h-72 max-h-[calc(100vh-12rem)] overflow-hidden"
+            scrollbarGutter
+            scrollFade
+          >
             <div className="p-1">
               {filteredOptions.length === 0 ? (
                 <div className="px-3 py-6 text-center text-muted-foreground text-sm">
@@ -565,6 +692,7 @@ export interface CascaderProps<Value extends string = string>
   placeholder?: string;
   separator?: React.ReactNode;
   disabled?: boolean;
+  clearable?: boolean;
   changeOnSelect?: boolean;
   size?: VariantProps<typeof selectTriggerVariants>["size"];
 }
@@ -600,6 +728,7 @@ export function Cascader<Value extends string = string>({
   placeholder = "请选择",
   separator = " / ",
   disabled = false,
+  clearable = true,
   changeOnSelect = false,
   size = "default",
   className,
@@ -650,6 +779,16 @@ export function Cascader<Value extends string = string>({
     },
     [isControlled, onValueChange],
   );
+  const handleClear = React.useCallback(
+    (event: React.MouseEvent<HTMLSpanElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setActivePath([]);
+      commitValue([], []);
+      setOpen(false);
+    },
+    [commitValue],
+  );
 
   return (
     <div className={cn("w-full", className)} data-slot="cascader" {...props}>
@@ -681,7 +820,19 @@ export function Cascader<Value extends string = string>({
                 ))
               : placeholder}
           </span>
-          <ChevronsUpDownIcon className={selectTriggerIconClassName} />
+          {clearable && selectedOptions.length > 0 && !disabled ? (
+            <span
+              aria-label="清空"
+              className="-me-1 inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={handleClear}
+              role="button"
+              tabIndex={-1}
+            >
+              <XIcon className="size-4" />
+            </span>
+          ) : (
+            <ChevronsUpDownIcon className={selectTriggerIconClassName} />
+          )}
         </PopoverTrigger>
         <PopoverPopup
           align="start"

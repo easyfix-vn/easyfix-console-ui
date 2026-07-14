@@ -3,6 +3,7 @@
 import { XIcon } from "lucide-react";
 import * as React from "react";
 import { Input, type InputProps } from "@/components/ui/input";
+import { isOverMaxLength } from "@/lib/max-length";
 import { cn } from "@/lib/utils";
 
 type BaseInputAttrs = Omit<
@@ -17,9 +18,11 @@ export type EasyInputProps = BaseInputAttrs & {
   prefix?: React.ReactNode;
   /** 后置插槽：渲染在输入框右侧（如图标、单位、按钮） */
   suffix?: React.ReactNode;
+  /** 提示插槽：渲染在输入框下方（如说明文本、链接） */
+  tips?: React.ReactNode;
   /** 是否可清除：在有内容时显示清除按钮 */
   allowClear?: boolean;
-  /** 字数限制：限制输入字数；与 showCount 配合显示当前字数 */
+  /** 字数软限制：允许超出输入，超出时标记错误并阻止原生表单提交 */
   maxLength?: number;
   /** 是否显示字数（"x / max" 格式） */
   showCount?: boolean;
@@ -32,6 +35,7 @@ export type EasyInputProps = BaseInputAttrs & {
 /**
  * 文本输入框增强版：
  * - 支持 prefix / suffix 插槽
+ * - 支持 tips 下方提示区域
  * - 支持 allowClear 一键清除
  * - 支持 maxLength + showCount 字数限制与字数提示
  *
@@ -44,6 +48,7 @@ export const EasyInput = React.forwardRef<HTMLInputElement, EasyInputProps>(
       wrapperClassName,
       prefix,
       suffix,
+      tips,
       allowClear = false,
       maxLength,
       showCount = false,
@@ -97,79 +102,96 @@ export const EasyInput = React.forwardRef<HTMLInputElement, EasyInputProps>(
 
     const showClearBtn =
       allowClear && !disabled && !readOnly && value.length > 0;
+    const overMaxLength = isOverMaxLength(value, maxLength);
     const hasSuffixArea = Boolean(suffix) || showClearBtn || showCount;
+    const hasTips = tips !== undefined && tips !== null && tips !== false;
 
     return (
-      <span
-        className={cn(
-          "relative inline-flex w-full min-w-0 items-center rounded-lg border border-input bg-background not-dark:bg-clip-padding text-base text-foreground shadow-xs/5 ring-ring/24 transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] not-has-[input:disabled]:not-has-[input:focus-visible]:not-has-[input[aria-invalid]]:before:shadow-[0_1px_--theme(--color-black/4%)] has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-[3px] has-[input[aria-invalid]]:border-destructive/36 has-[input:disabled]:opacity-64 sm:text-sm dark:bg-input/32 dark:not-has-[input:disabled]:not-has-[input:focus-visible]:not-has-[input[aria-invalid]]:before:shadow-[0_-1px_--theme(--color-white/6%)]",
-          wrapperClassName,
-        )}
-        data-slot="easy-input"
+      <div
+        className={cn("flex w-full min-w-0 flex-col gap-1", wrapperClassName)}
+        data-slot="easy-input-wrapper"
       >
-        {prefix && (
-          <span
-            className="flex shrink-0 items-center gap-1.5 ps-3 text-muted-foreground [&_svg]:size-4 [&_svg]:shrink-0"
-            data-slot="easy-input-prefix"
-            onMouseDown={(e) => {
-              if ((e.target as HTMLElement).tagName !== "INPUT") {
-                e.preventDefault();
-                innerRef.current?.focus();
-              }
-            }}
+        <span
+          className="relative inline-flex w-full min-w-0 items-center rounded-lg border border-input bg-background not-dark:bg-clip-padding text-base text-foreground shadow-xs/5 ring-ring/24 transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] not-has-[input:disabled]:not-has-[input:focus-visible]:not-has-[input[aria-invalid]]:before:shadow-[0_1px_--theme(--color-black/4%)] has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-[3px] has-[input[aria-invalid]]:border-destructive/36 has-[input:disabled]:opacity-64 sm:text-sm dark:bg-input/32 dark:not-has-[input:disabled]:not-has-[input:focus-visible]:not-has-[input[aria-invalid]]:before:shadow-[0_-1px_--theme(--color-white/6%)]"
+          data-slot="easy-input"
+        >
+          {prefix && (
+            <span
+              className="flex shrink-0 items-center gap-1.5 ps-3 text-muted-foreground [&_svg]:size-4 [&_svg]:shrink-0"
+              data-slot="easy-input-prefix"
+              onMouseDown={(e) => {
+                if ((e.target as HTMLElement).tagName !== "INPUT") {
+                  e.preventDefault();
+                  innerRef.current?.focus();
+                }
+              }}
+            >
+              {prefix}
+            </span>
+          )}
+          <Input
+            ref={innerRef}
+            unstyled
+            nativeInput
+            className={cn("flex-1", className)}
+            value={isControlled ? value : undefined}
+            defaultValue={isControlled ? undefined : defaultValue}
+            maxLength={maxLength}
+            disabled={disabled}
+            readOnly={readOnly}
+            onChange={handleChange}
+            {...props}
+          />
+          {hasSuffixArea && (
+            <span
+              className="flex shrink-0 items-center gap-1 pe-2.5 text-muted-foreground [&_svg]:size-4 [&_svg]:shrink-0"
+              data-slot="easy-input-suffix"
+              onMouseDown={(e) => {
+                const target = e.target as HTMLElement;
+                if (
+                  target.tagName !== "BUTTON" &&
+                  target.tagName !== "INPUT" &&
+                  !target.closest("button,a,input")
+                ) {
+                  e.preventDefault();
+                  innerRef.current?.focus();
+                }
+              }}
+            >
+              {showClearBtn && (
+                <button
+                  type="button"
+                  aria-label="Clear"
+                  className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground/72 outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={handleClear}
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              )}
+              {showCount && (
+                <span
+                  className={cn(
+                    "text-xs tabular-nums text-muted-foreground",
+                    overMaxLength && "text-destructive",
+                  )}
+                >
+                  {value.length}
+                  {maxLength != null ? ` / ${maxLength}` : ""}
+                </span>
+              )}
+              {suffix}
+            </span>
+          )}
+        </span>
+        {hasTips && (
+          <div
+            className="px-0.5 text-xs leading-5 text-muted-foreground"
+            data-slot="easy-input-tips"
           >
-            {prefix}
-          </span>
+            {tips}
+          </div>
         )}
-        <Input
-          ref={innerRef}
-          unstyled
-          nativeInput
-          className={cn("flex-1", className)}
-          value={isControlled ? value : undefined}
-          defaultValue={isControlled ? undefined : defaultValue}
-          maxLength={maxLength}
-          disabled={disabled}
-          readOnly={readOnly}
-          onChange={handleChange}
-          {...props}
-        />
-        {hasSuffixArea && (
-          <span
-            className="flex shrink-0 items-center gap-1 pe-2.5 text-muted-foreground [&_svg]:size-4 [&_svg]:shrink-0"
-            data-slot="easy-input-suffix"
-            onMouseDown={(e) => {
-              const target = e.target as HTMLElement;
-              if (
-                target.tagName !== "BUTTON" &&
-                target.tagName !== "INPUT" &&
-                !target.closest("button,a,input")
-              ) {
-                e.preventDefault();
-                innerRef.current?.focus();
-              }
-            }}
-          >
-            {showClearBtn && (
-              <button
-                type="button"
-                aria-label="Clear"
-                className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground/72 outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={handleClear}
-              >
-                <XIcon className="size-3.5" />
-              </button>
-            )}
-            {showCount && (
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {value.length}
-                {maxLength != null ? ` / ${maxLength}` : ""}
-              </span>
-            )}
-            {suffix}
-          </span>
-        )}
-      </span>
+      </div>
     );
   },
 );

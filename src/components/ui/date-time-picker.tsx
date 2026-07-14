@@ -228,7 +228,7 @@ export function DateTimePicker({
       </PopoverTrigger>
       <PopoverPopup
         align="start"
-        className="w-auto"
+        className="w-auto max-w-[calc(100vw-1rem)]"
         viewportClassName="!p-0 [--viewport-inline-padding:0px]"
       >
         {showTimeZone && (
@@ -242,13 +242,14 @@ export function DateTimePicker({
           </div>
         )}
         <Calendar
+          className="w-full max-w-full"
           defaultMonth={activeCalendarValue ?? calendarToday}
           mode="single"
           selected={activeCalendarValue}
           today={calendarToday}
           onSelect={handleDateSelect}
         />
-        <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
+        <div className="sticky bottom-0 z-1 flex items-center justify-between gap-2 border-t border-border bg-popover px-3 py-2">
           <TimeInput
             className="min-w-0 flex-1"
             label={t("datePicker.startTime")}

@@ -36,6 +36,21 @@ describe("EasyInput", () => {
     expect(screen.getByTestId("suffix")).toBeInTheDocument();
   });
 
+  it("renders tips below the input", () => {
+    const { container } = render(
+      <EasyInput
+        placeholder="用户名"
+        tips={<span data-testid="tips">请输入 6-20 位字符</span>}
+      />,
+    );
+
+    const inputControl = container.querySelector('[data-slot="easy-input"]');
+    const tips = container.querySelector('[data-slot="easy-input-tips"]');
+
+    expect(screen.getByTestId("tips")).toBeInTheDocument();
+    expect(inputControl?.nextElementSibling).toBe(tips);
+  });
+
   it("shows clear button when allowClear and has value", async () => {
     const user = userEvent.setup();
     const onClear = vi.fn();
@@ -63,7 +78,26 @@ describe("EasyInput", () => {
     render(<EasyInput defaultValue="" maxLength={3} showCount />);
     const input = screen.getByRole("textbox");
     await user.type(input, "abcde");
-    expect(input).toHaveValue("abc");
+    expect(input).toHaveValue("abcde");
+    expect(input).toBeInvalid();
+  });
+
+  it("prevents native form submission when maxLength is exceeded", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+    });
+    render(
+      <form onSubmit={onSubmit}>
+        <EasyInput maxLength={3} />
+        <button type="submit">Submit</button>
+      </form>,
+    );
+
+    await user.type(screen.getByRole("textbox"), "abcde");
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });
 

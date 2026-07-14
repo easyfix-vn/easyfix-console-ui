@@ -3,6 +3,7 @@
 import { Input as InputPrimitive } from "@base-ui/react/input";
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { isOverMaxLength, syncMaxLengthValidity } from "@/lib/max-length";
 
 export type InputProps = Omit<
   InputPrimitive.Props & React.RefAttributes<HTMLInputElement>,
@@ -22,10 +23,46 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
     nativeInput = false,
     inputClassName,
     style,
+    maxLength,
+    value: valueProp,
+    defaultValue,
+    onChange,
+    "aria-invalid": ariaInvalid,
     ...props
   },
   ref,
 ): React.ReactElement {
+  const isControlled = valueProp !== undefined;
+  const [innerValue, setInnerValue] = React.useState<string>(
+    defaultValue != null ? String(defaultValue) : "",
+  );
+  const value = isControlled ? String(valueProp ?? "") : innerValue;
+  const overMaxLength = isOverMaxLength(value, maxLength);
+  const innerRef = React.useRef<HTMLInputElement | null>(null);
+
+  React.useImperativeHandle(ref, () => innerRef.current as HTMLInputElement);
+
+  React.useEffect(() => {
+    if (innerRef.current) {
+      syncMaxLengthValidity(innerRef.current, value, maxLength);
+    }
+  }, [maxLength, value]);
+
+  const handleChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      syncMaxLengthValidity(
+        event.currentTarget,
+        event.currentTarget.value,
+        maxLength,
+      );
+      if (!isControlled) {
+        setInnerValue(event.currentTarget.value);
+      }
+      onChange?.(event as Parameters<NonNullable<typeof onChange>>[0]);
+    },
+    [isControlled, maxLength, onChange],
+  );
+
   const inputElementClassName = cn(
     "h-8.5 w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] leading-8.5 outline-none [transition:background-color_5000000s_ease-in-out_0s] placeholder:text-muted-foreground/72 sm:h-7.5 sm:leading-7.5",
     size === "sm" &&
@@ -54,19 +91,27 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
         <input
           className={inputElementClassName}
           data-slot="input"
-          ref={ref}
           size={typeof size === "number" ? size : undefined}
           style={typeof style === "function" ? undefined : style}
           {...props}
+          value={isControlled ? value : undefined}
+          defaultValue={isControlled ? undefined : defaultValue}
+          aria-invalid={overMaxLength ? true : ariaInvalid}
+          onChange={handleChange}
+          ref={innerRef}
         />
       ) : (
         <InputPrimitive
           className={inputElementClassName}
           data-slot="input"
-          ref={ref}
+          ref={innerRef}
           size={typeof size === "number" ? size : undefined}
           style={style}
           {...props}
+          value={isControlled ? value : undefined}
+          defaultValue={isControlled ? undefined : defaultValue}
+          aria-invalid={overMaxLength ? true : ariaInvalid}
+          onChange={handleChange}
         />
       )}
     </span>
