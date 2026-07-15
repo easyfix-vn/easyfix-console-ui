@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { EasyDrawer } from "./EasyDrawer";
+import { EasyDrawer, EasyDrawerPopup, EasyDrawerRoot } from "./EasyDrawer";
 
 describe("EasyDrawer", () => {
   it("点击触发器后抽屉打开", async () => {
@@ -83,5 +83,53 @@ describe("EasyDrawer", () => {
     expect(
       await screen.findByRole("button", { name: "确认" }),
     ).toBeInTheDocument();
+  });
+
+  it("Popup 和遮罩具有一致的进入与退出动画契约", () => {
+    render(
+      <EasyDrawerRoot open>
+        <EasyDrawerPopup position="right" showCloseButton={false}>
+          <p>动画内容</p>
+        </EasyDrawerPopup>
+      </EasyDrawerRoot>,
+    );
+
+    const popup = document.querySelector('[data-slot="easy-drawer-popup"]');
+    const backdrop = document.querySelector('[data-slot="easy-drawer-backdrop"]');
+
+    expect(popup).toHaveClass(
+      "transition-[transform,opacity]",
+      "duration-300",
+      "data-starting-style:opacity-0",
+      "data-ending-style:opacity-0",
+      "data-starting-style:translate-x-full",
+      "data-ending-style:translate-x-full",
+    );
+    expect(backdrop).toHaveClass(
+      "transition-opacity",
+      "duration-300",
+      "data-starting-style:opacity-0",
+      "data-ending-style:opacity-0",
+    );
+  });
+
+  it.each([
+    ["right", "data-starting-style:translate-x-full"],
+    ["left", "data-starting-style:-translate-x-full"],
+    ["bottom", "data-starting-style:translate-y-full"],
+    ["top", "data-starting-style:-translate-y-full"],
+  ] as const)("%s 方向使用正确的进入位移", (position, transitionClass) => {
+    render(
+      <EasyDrawerRoot open>
+        <EasyDrawerPopup position={position} showCloseButton={false}>
+          <p>动画内容</p>
+        </EasyDrawerPopup>
+      </EasyDrawerRoot>,
+    );
+
+    expect(document.querySelector('[data-slot="easy-drawer-popup"]')).toHaveClass(
+      "transition-[transform,opacity]",
+      transitionClass,
+    );
   });
 });

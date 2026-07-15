@@ -81,7 +81,7 @@ export function EasyDrawerBackdrop({
   return (
     <DrawerPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 h-dvh w-screen bg-black/40 backdrop-blur-[2px] transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-50 h-dvh w-screen bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       data-slot="easy-drawer-backdrop"
@@ -133,7 +133,7 @@ export function EasyDrawerPopup({
       <EasyDrawerViewport position={position}>
         <DrawerPrimitive.Popup
           className={cn(
-            "relative flex max-h-full min-h-0 flex-col overflow-hidden bg-background text-foreground shadow-xl outline-none transition-transform duration-300 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0",
+            "relative flex max-h-full min-h-0 flex-col overflow-hidden bg-background text-foreground shadow-xl outline-none transition-[transform,opacity] duration-300 ease-out will-change-[transform,opacity] data-ending-style:opacity-0 data-starting-style:opacity-0",
             (position === "right" || position === "left") &&
               cn(
                 "h-full w-[calc(100vw-3rem)]",
