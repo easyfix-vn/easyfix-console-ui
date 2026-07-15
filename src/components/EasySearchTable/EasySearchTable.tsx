@@ -712,21 +712,23 @@ export function EasySearchTable<T extends Record<string, unknown>>({
 
   return (
     <div className="min-w-0 space-y-4">
-      <EasySearchForm
-        fields={searchFields}
-        searchMode={searchMode}
-        values={searchValues}
-        onSearch={handleSearch}
-        onReset={handleReset}
-        onValuesChange={setSearchValues}
-        collapsed={searchCollapsed}
-        onToggle={handleToggleSearchCollapsed}
-        collapseThreshold={normalizedSearchCollapseThreshold}
-        showActions={!searchActionsInToolbar}
-        actionsClassName={
-          inlineSearchActionsInLastColumn ? undefined : 'justify-start'
-        }
-      />
+      {searchFields.length > 0 ? (
+        <EasySearchForm
+          fields={searchFields}
+          searchMode={searchMode}
+          values={searchValues}
+          onSearch={handleSearch}
+          onReset={handleReset}
+          onValuesChange={setSearchValues}
+          collapsed={searchCollapsed}
+          onToggle={handleToggleSearchCollapsed}
+          collapseThreshold={normalizedSearchCollapseThreshold}
+          showActions={!searchActionsInToolbar}
+          actionsClassName={
+            inlineSearchActionsInLastColumn ? undefined : 'justify-start'
+          }
+        />
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">

@@ -93,6 +93,14 @@ describe("EasySearchTable", () => {
     expect(screen.getByText("Charlie")).toBeInTheDocument();
   });
 
+  it("omits the search form when no search fields are configured", () => {
+    const { container } = renderWithI18n(
+      <EasySearchTable {...defaultProps} searchFields={[]} />,
+    );
+
+    expect(container.querySelector('[data-slot="easy-search-form"]')).not.toBeInTheDocument();
+  });
+
   it("shows total count", () => {
     render(<EasySearchTable {...defaultProps} />);
     expect(screen.getByText(/3/)).toBeInTheDocument();
@@ -285,6 +293,7 @@ describe("EasySearchTable", () => {
         {...defaultProps}
         searchFields={selectFields}
         onSearch={onSearch}
+        searchThrottleMs={0}
       />,
     );
 
@@ -296,6 +305,40 @@ describe("EasySearchTable", () => {
     await user.click(options[0]);
 
     expect(onSearch).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 1, pageSize: 10, status: "" }),
+    );
+  });
+
+  it("clears a select filter to an empty value", async () => {
+    const user = userEvent.setup();
+    const onSearch = vi.fn();
+    const selectFields: SearchFieldDef[] = [
+      {
+        key: "status",
+        labelKey: "Status",
+        type: "select",
+        placeholder: "Select status",
+        options: [{ label: "Active", value: "active" }],
+      },
+    ];
+
+    const { container } = renderWithI18n(
+      <EasySearchTable
+        {...defaultProps}
+        searchFields={selectFields}
+        onSearch={onSearch}
+        searchThrottleMs={0}
+      />,
+    );
+
+    const searchForm = container.querySelector('[data-slot="easy-search-form"]');
+    expect(searchForm).toBeTruthy();
+
+    await user.click(screen.getByText("Select status"));
+    await user.click(await screen.findByRole("option", { name: "Active" }));
+    await user.click(within(searchForm!).getByRole("button", { name: "清空" }));
+
+    expect(onSearch).toHaveBeenLastCalledWith(
       expect.objectContaining({ page: 1, pageSize: 10, status: "" }),
     );
   });

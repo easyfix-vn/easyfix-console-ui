@@ -118,7 +118,7 @@ export const vi = {
     addLocale: "Thêm ngôn ngữ",
     clearValue: "Xóa nội dung nhập",
     defaultLocale: "Mặc định",
-    defaultPlaceholder: "Vui lòng nhập nội dung {{lang}} cho {{label}}",
+    defaultPlaceholder: "Vui lòng nhập nội dung {{lang}} cho 「{{label}}」",
     expandLocales: "Mở rộng bản dịch",
     collapseLocales: "Thu gọn bản dịch",
     confirmRemoveLocale: "Xóa ngôn ngữ {{locale}}?",

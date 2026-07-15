@@ -23,7 +23,7 @@ export { DialogCreateHandle, Dialog, DialogPortal, DialogTrigger, DialogClose, D
 export { DrawerCreateHandle, Drawer, DrawerPortal, DrawerTrigger, DrawerClose, DrawerSwipeArea, DrawerBackdrop, DrawerOverlay, DrawerViewport, DrawerPopup, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription, DrawerPanel, DrawerBar, DrawerSwipeHandle, DrawerContent, DrawerMenu, DrawerMenuItem, DrawerMenuSeparator, DrawerMenuGroup, DrawerMenuGroupLabel, DrawerMenuTrigger, DrawerMenuCheckboxItem, DrawerMenuRadioGroup, DrawerMenuRadioItem, DrawerPrimitive } from "./drawer";
 export { DropdownMenu, DropdownMenuPortal, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "./dropdown-menu";
 export { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "./empty";
-export { Field, FieldLabel, FieldItem, FieldDescription, FieldError, FieldControl, FieldValidity, FieldPrimitive } from "./field";
+export { Field, FieldLabel, FieldItem, FieldDescription, FieldError, FieldControl, FieldValidity, FieldPrimitive, type FieldOrientation, type FieldProps } from "./field";
 export { Fieldset, FieldsetLegend, FieldsetPrimitive } from "./fieldset";
 export { Form, FormPrimitive } from "./form";
 export { Frame, FramePanel, FrameHeader, FrameTitle, FrameDescription, FrameFooter } from "./frame";

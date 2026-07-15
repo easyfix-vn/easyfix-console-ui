@@ -172,7 +172,10 @@ export function EasySearchForm({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+    <div
+      className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
+      data-slot="easy-search-form"
+    >
       {visibleFields.map((field) => (
         <div
           key={field.key}
@@ -224,7 +227,7 @@ export function EasySearchForm({
           ) : (
             <Select
               value={(values[field.key] as string) ?? ''}
-              onValueChange={(v) => v !== null && handleChange(field, v)}
+              onValueChange={(v) => handleChange(field, v ?? '')}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={field.placeholder} />

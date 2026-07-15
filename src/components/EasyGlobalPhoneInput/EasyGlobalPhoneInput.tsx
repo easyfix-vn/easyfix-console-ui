@@ -105,6 +105,7 @@ export const EasyGlobalPhoneInput = React.forwardRef<
           value={cc}
           onValueChange={(val) => onCcChange(val as string)}
           disabled={disabled}
+          clearable={false}
         >
           <SelectTrigger
             size={size}

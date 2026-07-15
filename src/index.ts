@@ -259,6 +259,8 @@ export {
   FieldControl,
   FieldValidity,
   FieldPrimitive,
+  type FieldOrientation,
+  type FieldProps,
   Fieldset,
   FieldsetLegend,
   FieldsetPrimitive,

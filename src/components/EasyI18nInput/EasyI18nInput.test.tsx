@@ -70,12 +70,12 @@ describe("EasyI18nInput", () => {
 
     expect(screen.getByRole("tab", { name: "默认" })).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText("请输入服务名称 默认语言内容"),
+      screen.getByPlaceholderText("请输入「服务名称」默认语言内容"),
     ).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText("请输入服务名称 English语言内容"),
+      screen.getByPlaceholderText("请输入「服务名称」English语言内容"),
     ).toBeInTheDocument();
-    expect(screen.getByText("请输入服务名称 默认语言内容")).toBeInTheDocument();
+    expect(screen.getByText("请输入「服务名称」默认语言内容")).toBeInTheDocument();
   });
 
   it("uses supportLang to limit and order locale tabs", () => {

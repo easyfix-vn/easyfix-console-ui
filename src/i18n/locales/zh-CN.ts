@@ -118,7 +118,7 @@ export const zhCN = {
     addLocale: "添加语言",
     clearValue: "清空输入内容",
     defaultLocale: "默认",
-    defaultPlaceholder: "请输入{{label}} {{lang}}语言内容",
+    defaultPlaceholder: "请输入「{{label}}」{{lang}}语言内容",
     expandLocales: "展开多语言输入",
     collapseLocales: "收起多语言输入",
     confirmRemoveLocale: "确定移除 {{locale}} 语言？",

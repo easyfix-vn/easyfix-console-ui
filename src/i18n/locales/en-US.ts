@@ -118,7 +118,7 @@ export const enUS = {
     addLocale: "Add language",
     clearValue: "Clear input",
     defaultLocale: "Default",
-    defaultPlaceholder: "Please enter {{lang}} content for {{label}}",
+    defaultPlaceholder: "Please enter {{lang}} content for 「{{label}}」",
     expandLocales: "Expand translations",
     collapseLocales: "Collapse translations",
     confirmRemoveLocale: "Remove {{locale}} language?",
