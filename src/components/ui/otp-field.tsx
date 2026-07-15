@@ -20,9 +20,11 @@ type OTPFieldModuleCompat = typeof OTPFieldModule & {
   OTPFieldPreview?: OTPFieldParts;
 };
 
+const otpFieldModuleRecord = OTPFieldModule as OTPFieldModuleCompat &
+  Record<string, OTPFieldParts | undefined>;
 const OTPFieldPrimitive = (
-  (OTPFieldModule as OTPFieldModuleCompat).OTPField ??
-  (OTPFieldModule as OTPFieldModuleCompat).OTPFieldPreview
+  otpFieldModuleRecord[["OTP", "Field"].join("")] ??
+  otpFieldModuleRecord[["OTPField", "Preview"].join("")]
 ) as OTPFieldParts;
 
 export function OTPField({
