@@ -1,15 +1,35 @@
 "use client";
 
-import { OTPFieldPreview as OTPFieldPrimitive } from "@base-ui/react/otp-field";
+import * as OTPFieldModule from "@base-ui/react/otp-field";
+import type {
+  OTPFieldInputProps,
+  OTPFieldRootProps,
+} from "@base-ui/react/otp-field";
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+
+type OTPFieldParts = {
+  Root: React.ComponentType<OTPFieldRootProps>;
+  Input: React.ComponentType<OTPFieldInputProps>;
+  Separator: React.ComponentType<{ render?: React.ReactElement }>;
+};
+
+type OTPFieldModuleCompat = typeof OTPFieldModule & {
+  OTPField?: OTPFieldParts;
+  OTPFieldPreview?: OTPFieldParts;
+};
+
+const OTPFieldPrimitive = (
+  (OTPFieldModule as OTPFieldModuleCompat).OTPField ??
+  (OTPFieldModule as OTPFieldModuleCompat).OTPFieldPreview
+) as OTPFieldParts;
 
 export function OTPField({
   className,
   size = "default",
   ...props
-}: React.ComponentProps<typeof OTPFieldPrimitive.Root> & {
+}: OTPFieldRootProps & {
   size?: "default" | "lg";
 }): React.ReactElement {
   return (
@@ -28,7 +48,7 @@ export function OTPField({
 export function OTPFieldInput({
   className,
   ...props
-}: React.ComponentProps<typeof OTPFieldPrimitive.Input>): React.ReactElement {
+}: OTPFieldInputProps): React.ReactElement {
   return (
     <OTPFieldPrimitive.Input
       className={cn(
