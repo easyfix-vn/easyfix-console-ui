@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyCalendarTime,
   calendarDateToZonedDate,
   createDefaultDateRangeShortcuts,
   dayjs,
@@ -8,6 +9,7 @@ import {
   getTimeZoneOptions,
   getTimeZoneOptionTag,
   isValidDateTimeZone,
+  toCalendarTimeString,
   toZonedCalendarDate,
 } from "./date-time-zone";
 
@@ -124,6 +126,13 @@ describe("date-time-zone", () => {
     );
 
     expect(date.toISOString()).toBe("2026-01-01T16:59:59.999Z");
+  });
+
+  it("preserves optional seconds when applying and formatting calendar time", () => {
+    const date = applyCalendarTime(new Date(2026, 6, 11), "08:30:45");
+
+    expect(toCalendarTimeString(date)).toBe("08:30");
+    expect(toCalendarTimeString(date, true)).toBe("08:30:45");
   });
 
   it("converts an instant back to the calendar date in timezone", () => {

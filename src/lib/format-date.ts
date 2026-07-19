@@ -39,6 +39,27 @@ export const DEFAULT_DATE_TEMPLATES: Record<EasyLocale, string> = {
   vi: "DD/MM/YYYY",
 };
 
+/** 不同语言下的常用默认月份模板 */
+export const DEFAULT_MONTH_TEMPLATES: Record<EasyLocale, string> = {
+  "zh-CN": "YYYY-MM",
+  "en-US": "MM/YYYY",
+  vi: "MM/YYYY",
+};
+
+/** 年份选择器的默认模板 */
+export const DEFAULT_YEAR_TEMPLATES: Record<EasyLocale, string> = {
+  "zh-CN": "YYYY",
+  "en-US": "YYYY",
+  vi: "YYYY",
+};
+
+/** 时间选择器的默认模板（24 小时制） */
+export const DEFAULT_TIME_TEMPLATES: Record<EasyLocale, string> = {
+  "zh-CN": "HH:mm",
+  "en-US": "HH:mm",
+  vi: "HH:mm",
+};
+
 /** 不同语言下的常用默认日期时间模板（24 小时制） */
 export const DEFAULT_DATETIME_TEMPLATES: Record<EasyLocale, string> = {
   "zh-CN": "YYYY-MM-DD HH:mm",

@@ -1,90 +1,70 @@
 "use client";
 
-import { CalendarIcon, ClockIcon } from "lucide-react";
+import { CalendarIcon, XIcon } from "lucide-react";
 import * as React from "react";
-import { useEasyI18n, useEasyT } from "@/i18n";
 import { useConfig } from "@/components/ui/config-provider";
+import { Button } from "@/components/ui/button";
+import {
+  DatePickerPanel,
+  type DatePickerType,
+  type DisabledDate,
+} from "@/components/ui/date-picker-panel";
+import { Popover, PopoverPopup, PopoverTrigger } from "@/components/ui/popover";
+import {
+  applyTimeValue,
+  findFirstAllowedTime,
+  isTimeAllowed,
+  TimePickerPanel,
+  type DisabledTime,
+  type SelectableRange,
+  type TimeConstraintOptions,
+} from "@/components/ui/time-picker-panel";
+import { TimezoneSelect, TimeZoneTag } from "@/components/ui/time-zone-select";
+import { useEasyI18n, useEasyT } from "@/i18n";
 import {
   DEFAULT_DATETIME_TEMPLATES,
+  DEFAULT_MONTH_TEMPLATES,
+  DEFAULT_YEAR_TEMPLATES,
   type DateFormatter,
   resolveFormatter,
 } from "@/lib/format-date";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverPopup, PopoverTrigger } from "@/components/ui/popover";
-import { TimezoneSelect, TimeZoneTag } from "@/components/ui/time-zone-select";
 import {
-  applyCalendarTime,
   calendarDateToZonedDate,
   normalizeDateTimeZone,
-  toCalendarTimeString,
   toZonedCalendarDate,
   type TimeZoneOption,
 } from "@/lib/date-time-zone";
 
-/* ------------------------------------------------------------------ */
-/* 共享：时间输入框                                                    */
-/* ------------------------------------------------------------------ */
-
-type TimeInputProps = {
-  label?: React.ReactNode;
-  value: string; // HH:mm
-  onChange: (val: string) => void;
-  disabled?: boolean;
-  className?: string;
-};
-
-/**
- * 用主题色重绘的 time input：
- *  - text-foreground 让数字跟随主题
- *  - dark 下 invert 时钟图标避免黑色图标在暗色背景中看不清
- *  - 容器边框/圆角与 Input 一致
- */
-function TimeInput({ label, value, onChange, disabled, className }: TimeInputProps) {
-  return (
-    <label
-      className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-lg border border-input bg-background px-2.5 py-0 text-sm text-foreground shadow-xs/5 ring-ring/24 transition-shadow focus-within:border-ring focus-within:ring-[3px] sm:h-7",
-        disabled && "opacity-64",
-        className,
-      )}
-    >
-      <ClockIcon
-        aria-hidden="true"
-        className="size-4 shrink-0 text-muted-foreground"
-      />
-      {label && (
-        <span className="whitespace-nowrap text-xs text-muted-foreground">
-          {label}
-        </span>
-      )}
-      <input
-        type="time"
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          "h-full min-w-0 flex-1 bg-transparent text-foreground tabular-nums outline-none placeholder:text-muted-foreground accent-primary",
-          "[&::-webkit-calendar-picker-indicator]:hidden",
-          "[color-scheme:light] dark:[color-scheme:dark]",
-        )}
-      />
-    </label>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* DateTimePicker                                                      */
-/* ------------------------------------------------------------------ */
+export type DateTimePickerType = "datetime" | "date" | "month" | "year";
 
 export type DateTimePickerProps = {
+  /**
+   * 选择粒度；year/month 分别返回当年/当月第一天，且不显示时间面板。
+   * `date` 仅作为旧用法的兼容别名，等同于 `datetime`。
+   */
+  type?: DateTimePickerType;
   value?: Date;
   onChange?: (date: Date | undefined) => void;
   /** 选中日期时间按指定时区转换为时间戳后回调，单位毫秒 */
   onTimestampChange?: (timestamp: number | undefined) => void;
   placeholder?: string;
+  /** 空值时日历初始展示日期，不会直接提交 */
+  defaultValue?: Date;
+  /** 空值首次选择日期时采用的时间 */
+  defaultTime?: string | Date;
   disabled?: boolean;
+  clearable?: boolean;
+  /** 返回 true 时不可选择；month/year 分别以月 1 日/当年 1 月 1 日判断 */
+  disabledDate?: DisabledDate;
+  selectableRange?: SelectableRange;
+  disabledTime?: DisabledTime;
+  showSeconds?: boolean;
+  hourStep?: number;
+  minuteStep?: number;
+  secondStep?: number;
+  startYear?: number;
+  endYear?: number;
   className?: string;
   /** IANA 时区；未传时读取 ConfigProvider.timeZone 或浏览器时区 */
   timeZone?: string;
@@ -92,16 +72,29 @@ export type DateTimePickerProps = {
   onTimeZoneChange?: (timeZone: string) => void;
   timeZoneOptions?: TimeZoneOption[];
   showTimeZone?: boolean;
-  /** 同 DatePicker.format；默认根据 locale 取 YYYY-MM-DD HH:mm 等模板 */
+  /** 同 DatePicker.format；默认根据 type 和 locale 选择日期模板 */
   format?: DateFormatter;
 };
 
 export function DateTimePicker({
+  type = "datetime",
   value,
   onChange,
   onTimestampChange,
   placeholder,
+  defaultValue,
+  defaultTime = "00:00:00",
   disabled = false,
+  clearable = true,
+  disabledDate,
+  selectableRange,
+  disabledTime,
+  showSeconds = false,
+  hourStep = 1,
+  minuteStep = 1,
+  secondStep = 1,
+  startYear,
+  endYear,
   className,
   timeZone,
   defaultTimeZone,
@@ -119,6 +112,27 @@ export function DateTimePicker({
   const { locale } = useEasyI18n();
   const t = useEasyT();
   const resolvedTimeZone = normalizeDateTimeZone(timeZone ?? internalTimeZone);
+  const isDateTime = type === "datetime" || type === "date";
+  const pickerType: DatePickerType = isDateTime ? "date" : type;
+  const constraints = React.useMemo<TimeConstraintOptions>(
+    () => ({
+      selectableRange,
+      disabledTime,
+      role: "single",
+      showSeconds,
+      hourStep,
+      minuteStep,
+      secondStep,
+    }),
+    [
+      disabledTime,
+      hourStep,
+      minuteStep,
+      secondStep,
+      selectableRange,
+      showSeconds,
+    ],
+  );
 
   React.useEffect(() => {
     if (timeZone === undefined) {
@@ -127,6 +141,7 @@ export function DateTimePicker({
       );
     }
   }, [configTimeZone, defaultTimeZone, timeZone]);
+
   const calendarValue = React.useMemo(
     () => toZonedCalendarDate(value, resolvedTimeZone),
     [value, resolvedTimeZone],
@@ -138,8 +153,18 @@ export function DateTimePicker({
   );
   const calendarToday = toZonedCalendarDate(new Date(), resolvedTimeZone);
   const formatter = React.useMemo(
-    () => resolveFormatter(format, DEFAULT_DATETIME_TEMPLATES[locale]),
-    [format, locale],
+    () => {
+      const template =
+        type === "year"
+          ? DEFAULT_YEAR_TEMPLATES[locale]
+          : type === "month"
+            ? DEFAULT_MONTH_TEMPLATES[locale]
+            : showSeconds
+              ? `${DEFAULT_DATETIME_TEMPLATES[locale]}:ss`
+              : DEFAULT_DATETIME_TEMPLATES[locale];
+      return resolveFormatter(format, template);
+    },
+    [format, locale, showSeconds, type],
   );
 
   const emitValue = React.useCallback(
@@ -150,20 +175,53 @@ export function DateTimePicker({
     [onChange, onTimestampChange],
   );
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (!date) {
-      setPendingDate(undefined);
-      return;
-    }
+  const handleDateSelect = React.useCallback(
+    (date: Date | undefined) => {
+      if (!date || disabledDate?.(date)) {
+        setPendingDate(undefined);
+        return;
+      }
 
-    const next = applyCalendarTime(
-      date,
-      activeCalendarValue
-        ? toCalendarTimeString(activeCalendarValue)
-        : "00:00",
-    );
-    setPendingDate(calendarDateToZonedDate(next, resolvedTimeZone, "dateTime"));
-  };
+      if (!isDateTime) {
+        const next = calendarDateToZonedDate(
+          date,
+          resolvedTimeZone,
+          "startOfDay",
+        );
+        setPendingDate(next);
+        emitValue(next);
+        setOpen(false);
+        return;
+      }
+
+      let next = new Date(date);
+      if (activeCalendarValue) {
+        next.setHours(
+          activeCalendarValue.getHours(),
+          activeCalendarValue.getMinutes(),
+          activeCalendarValue.getSeconds(),
+          0,
+        );
+      } else {
+        next = applyTimeValue(next, defaultTime);
+      }
+      const allowed = isTimeAllowed(next, constraints)
+        ? next
+        : findFirstAllowedTime(next, constraints) ?? next;
+      setPendingDate(
+        calendarDateToZonedDate(allowed, resolvedTimeZone, "dateTime"),
+      );
+    },
+    [
+      activeCalendarValue,
+      constraints,
+      defaultTime,
+      disabledDate,
+      emitValue,
+      isDateTime,
+      resolvedTimeZone,
+    ],
+  );
 
   const handleTimeZoneChange = React.useCallback(
     (nextTimeZone: string) => {
@@ -173,35 +231,52 @@ export function DateTimePicker({
         resolvedTimeZone,
       );
 
-      if (timeZone === undefined) {
-        setInternalTimeZone(normalized);
-      }
+      if (timeZone === undefined) setInternalTimeZone(normalized);
       onTimeZoneChange?.(normalized);
-
       if (currentCalendarValue) {
         setPendingDate(
-          calendarDateToZonedDate(currentCalendarValue, normalized, "dateTime"),
+          calendarDateToZonedDate(
+            currentCalendarValue,
+            normalized,
+            isDateTime ? "dateTime" : "startOfDay",
+          ),
         );
       }
     },
-    [onTimeZoneChange, open, pendingDate, resolvedTimeZone, timeZone, value],
+    [
+      isDateTime,
+      onTimeZoneChange,
+      open,
+      pendingDate,
+      resolvedTimeZone,
+      timeZone,
+      value,
+    ],
   );
 
   const handleOpenChange = React.useCallback(
     (nextOpen: boolean) => {
-      if (nextOpen) {
-        setPendingDate(value);
-      }
+      if (nextOpen) setPendingDate(value);
       setOpen(nextOpen);
     },
     [value],
   );
 
-  const commitPendingDate = React.useCallback(() => {
-    if (!pendingDate) return;
-    emitValue(pendingDate);
-    setOpen(false);
-  }, [emitValue, pendingDate]);
+  const handleClear = React.useCallback(
+    (event: React.MouseEvent<HTMLSpanElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingDate(undefined);
+      emitValue(undefined);
+      setOpen(false);
+    },
+    [emitValue],
+  );
+
+  const validTime = isTimeAllowed(activeCalendarValue, constraints);
+  const validDate = Boolean(
+    activeCalendarValue && !disabledDate?.(activeCalendarValue),
+  );
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -222,8 +297,26 @@ export function DateTimePicker({
         <span className="min-w-0 flex-1 truncate">
           {calendarValue
             ? formatter(calendarValue)
-            : placeholder ?? t("datePicker.placeholderDateTime")}
+            : placeholder ??
+              t(
+                type === "year"
+                  ? "datePicker.placeholderYear"
+                  : type === "month"
+                    ? "datePicker.placeholderMonth"
+                    : "datePicker.placeholderDateTime",
+              )}
         </span>
+        {clearable && value && !disabled && (
+          <span
+            aria-label={t("actions.clear")}
+            className="-me-1 inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={handleClear}
+            role="button"
+            tabIndex={-1}
+          >
+            <XIcon className="size-4" />
+          </span>
+        )}
         {showTimeZone && <TimeZoneTag timeZone={resolvedTimeZone} />}
       </PopoverTrigger>
       <PopoverPopup
@@ -232,8 +325,9 @@ export function DateTimePicker({
         viewportClassName="!p-0 [--viewport-inline-padding:0px]"
       >
         {showTimeZone && (
-          <div className="border-b px-3 py-2">
+          <div className="flex justify-center border-b px-3 py-2">
             <TimezoneSelect
+              className="w-60 max-w-full"
               value={resolvedTimeZone}
               onValueChange={handleTimeZoneChange}
               options={timeZoneOptions}
@@ -241,44 +335,55 @@ export function DateTimePicker({
             />
           </div>
         )}
-        <Calendar
-          className="w-full max-w-full"
-          defaultMonth={activeCalendarValue ?? calendarToday}
-          mode="single"
-          selected={activeCalendarValue}
+        <DatePickerPanel
+          className="mx-auto"
+          key={`${pickerType}-${open ? "open" : "closed"}`}
+          defaultMonth={
+            activeCalendarValue ??
+            toZonedCalendarDate(defaultValue, resolvedTimeZone) ??
+            calendarToday
+          }
+          disabledDate={disabledDate}
+          endYear={endYear}
+          onDateSelect={handleDateSelect}
+          selectedDate={activeCalendarValue}
+          startYear={startYear}
           today={calendarToday}
-          onSelect={handleDateSelect}
+          type={pickerType}
         />
-        <div className="sticky bottom-0 z-1 flex items-center justify-between gap-2 border-t border-border bg-popover px-3 py-2">
-          <TimeInput
-            className="min-w-0 flex-1"
-            label={t("datePicker.startTime")}
-            value={toCalendarTimeString(activeCalendarValue)}
-            onChange={(nextTime) => {
-              const base =
-                activeCalendarValue ??
-                toZonedCalendarDate(new Date(), resolvedTimeZone) ??
-                new Date();
-              setPendingDate(
-                calendarDateToZonedDate(
-                  applyCalendarTime(base, nextTime),
-                  resolvedTimeZone,
-                  "dateTime",
-                ),
-              );
-            }}
-            disabled={disabled || !activeCalendarValue}
-          />
-          <Button
-            className="h-8 sm:h-7"
-            disabled={disabled || !pendingDate}
-            onClick={commitPendingDate}
-            size="sm"
-            type="button"
-          >
-            {t("actions.confirm")}
-          </Button>
-        </div>
+        {isDateTime && (
+          <div className="sticky bottom-0 z-1 flex flex-col items-stretch gap-2 border-t border-border bg-popover px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+            <TimePickerPanel
+              {...constraints}
+              className="min-w-0 flex-1 max-sm:justify-center"
+              disabled={disabled || !activeCalendarValue}
+              onChange={(date) =>
+                setPendingDate(
+                  calendarDateToZonedDate(
+                    date,
+                    resolvedTimeZone,
+                    "dateTime",
+                  ),
+                )
+              }
+              value={activeCalendarValue}
+            />
+            <Button
+              className="h-8 self-end sm:h-7"
+              disabled={
+                disabled || !pendingDate || !validDate || !validTime
+              }
+              onClick={() => {
+                emitValue(pendingDate);
+                setOpen(false);
+              }}
+              size="sm"
+              type="button"
+            >
+              {t("actions.confirm")}
+            </Button>
+          </div>
+        )}
       </PopoverPopup>
     </Popover>
   );

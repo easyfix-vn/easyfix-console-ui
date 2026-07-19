@@ -55,9 +55,11 @@ export function Calendar({
       "w-full flex items-center text-base sm:text-sm justify-center h-(--cell-size) gap-1.5 *:[span]:font-medium",
     hidden: "invisible",
     month: "w-full",
+    month_grid: "mx-auto border-collapse",
     month_caption:
       "relative mx-(--cell-size) px-1 mb-1 flex h-(--cell-size) items-center justify-center z-2",
-    months: "relative flex flex-col sm:flex-row gap-2",
+    months:
+      "relative flex flex-col items-center justify-center gap-2 sm:flex-row sm:items-start",
     nav: "absolute top-0 flex w-full justify-between z-1",
     outside:
       "text-muted-foreground data-selected:bg-accent/50 data-selected:text-muted-foreground",
@@ -65,7 +67,7 @@ export function Calendar({
     range_middle: "range-middle",
     range_start: "range-start",
     today:
-      "*:after:pointer-events-none *:after:absolute *:after:bottom-1 *:after:start-1/2 *:after:z-1 *:after:size-1.5 *:after:-translate-x-1/2 *:after:rounded-full *:after:bg-primary [&[data-selected]:not(.range-middle)>*]:after:bg-background [&[data-disabled]>*]:after:bg-foreground/30 *:after:transition-colors",
+      "*:after:pointer-events-none *:after:absolute *:after:bottom-0.5 *:after:start-1/2 *:after:z-1 *:after:size-1 *:after:-translate-x-1/2 *:after:rounded-full *:after:bg-primary [&[data-selected]:not(.range-middle)>*]:after:bg-background [&[data-disabled]>*]:after:bg-foreground/30 *:after:transition-colors",
     week_number:
       "size-(--cell-size) p-0 text-xs font-medium text-muted-foreground/72",
     weekday:

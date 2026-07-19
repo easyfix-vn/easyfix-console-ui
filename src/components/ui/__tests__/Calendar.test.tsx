@@ -38,6 +38,16 @@ describe("Calendar", () => {
     }
   });
 
+  it("给当天标记保留文字间距并使用紧凑圆点", () => {
+    const today = new Date(2026, 6, 18);
+    render(<Calendar month={today} today={today} />);
+
+    expect(document.querySelector("[data-today]")).toHaveClass(
+      "*:after:bottom-0.5",
+      "*:after:size-1",
+    );
+  });
+
   it("使用中文 locale 渲染", () => {
     render(
       <EasyI18nProvider locale="zh-CN">

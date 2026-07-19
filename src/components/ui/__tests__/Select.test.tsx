@@ -67,6 +67,24 @@ describe("SearchableSelect", () => {
     const input = screen.getByPlaceholderText("搜索...");
     expect(input).toHaveClass("!ps-2");
   });
+
+  it("can render a compact trigger value without changing option labels", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SearchableSelect
+        defaultValue="react"
+        options={options}
+        renderValue={(option) => `已选：${option.label}`}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /已选：React/ });
+    expect(trigger).toHaveTextContent("已选：React");
+    await user.click(trigger);
+    expect(screen.getByRole("dialog")).toHaveTextContent("React");
+    expect(screen.getByRole("dialog")).not.toHaveTextContent("已选：React");
+  });
 });
 
 const cascaderOptions: CascaderOption[] = [

@@ -256,7 +256,10 @@ export function SelectTrigger({
           <XIcon className="size-4" />
         </span>
       ) : (
-        <SelectPrimitive.Icon data-slot="select-icon">
+        <SelectPrimitive.Icon
+          className="inline-flex shrink-0 self-center items-center justify-center leading-none"
+          data-slot="select-icon"
+        >
           <ChevronsUpDownIcon className={selectTriggerIconClassName} />
         </SelectPrimitive.Icon>
       )}
@@ -472,6 +475,7 @@ export interface SearchableSelectProps<Value extends string = string>
   popupClassName?: string;
   size?: VariantProps<typeof selectTriggerVariants>["size"];
   startAddon?: React.ReactNode;
+  renderValue?: (option: SelectOption<Value>) => React.ReactNode;
 }
 
 function optionToSearchText<Value extends string>(
@@ -517,6 +521,7 @@ export function SearchableSelect<Value extends string = string>({
   popupClassName,
   size = "default",
   startAddon,
+  renderValue,
   className,
   ...props
 }: SearchableSelectProps<Value>): React.ReactElement {
@@ -582,7 +587,9 @@ export function SearchableSelect<Value extends string = string>({
         >
           {startAddon && <span className="-ms-0.5 opacity-80">{startAddon}</span>}
           <span className="min-w-0 flex-1 truncate">
-            {selectedOption?.label ?? placeholder}
+            {selectedOption
+              ? renderValue?.(selectedOption) ?? selectedOption.label
+              : placeholder}
           </span>
           {clearable && currentValue && !disabled ? (
             <span

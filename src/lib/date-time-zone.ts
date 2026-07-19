@@ -305,25 +305,29 @@ export function getZonedTimestamp(
   return calendarDateToZonedDate(date, timeZone, boundary).getTime();
 }
 
-export function applyCalendarTime(base: Date, hhmm: string): Date {
-  const [hours, minutes] = hhmm.split(":").map(Number);
+export function applyCalendarTime(base: Date, time: string): Date {
+  const [hours, minutes, seconds] = time.split(":").map(Number);
   return new Date(
     base.getFullYear(),
     base.getMonth(),
     base.getDate(),
     hours || 0,
     minutes || 0,
-    0,
+    seconds || 0,
     0,
   );
 }
 
-export function toCalendarTimeString(date: Date | undefined): string {
+export function toCalendarTimeString(
+  date: Date | undefined,
+  showSeconds = false,
+): string {
   if (!date) {
     return "";
   }
 
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return showSeconds ? `${time}:${pad(date.getSeconds())}` : time;
 }
 
 export function getTimestampRange(

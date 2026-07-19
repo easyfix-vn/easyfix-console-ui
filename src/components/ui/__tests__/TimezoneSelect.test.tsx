@@ -15,6 +15,7 @@ describe("TimezoneSelect", () => {
 
     expect(screen.getByRole("button")).toHaveTextContent("UTC+08");
     expect(screen.getByRole("button")).toHaveTextContent("中国 · 上海");
+    expect(screen.getByTitle("中国 · 上海")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "清空" })).not.toBeInTheDocument();
   });
 

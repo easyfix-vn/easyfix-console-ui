@@ -159,6 +159,12 @@ export function TimezoneSelect({
     ? browserTimeZone
     : undefined;
   const currentTimeZoneLabel = t("timeZone.current");
+  const selectedTimeZoneOption = resolvedOptions.find(
+    (option) => option.value === resolvedValue,
+  );
+  const selectedTimeZoneName = selectedTimeZoneOption
+    ? getOptionName(selectedTimeZoneOption, t)
+    : resolvedValue;
   const searchableOptions = React.useMemo<SelectOption<IanaTimeZone>[]>(
     () =>
       [...resolvedOptions]
@@ -223,6 +229,19 @@ export function TimezoneSelect({
         emptyText={t("timeZone.emptyText")}
         clearable={false}
         disabled={disabled}
+        renderValue={() => (
+          <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
+            <span className="shrink-0 font-mono">
+              {getDateTimeZoneTag(resolvedValue)}
+            </span>
+            <span
+              className="min-w-0 truncate text-muted-foreground"
+              title={selectedTimeZoneName}
+            >
+              {selectedTimeZoneName}
+            </span>
+          </span>
+        )}
         popupClassName="min-w-[min(34rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]"
         size="sm"
         className="min-w-44 max-w-full flex-1 [&_[data-slot=popover-trigger]]:h-7 [&_[data-slot=popover-trigger]]:min-h-7 [&_[data-slot=popover-trigger]]:rounded-full [&_[data-slot=popover-trigger]]:bg-muted/60 [&_[data-slot=popover-trigger]]:px-2.5 [&_[data-slot=popover-trigger]]:text-xs [&_[data-slot=popover-trigger]]:leading-none [&_[data-slot=popover-trigger]]:shadow-none"

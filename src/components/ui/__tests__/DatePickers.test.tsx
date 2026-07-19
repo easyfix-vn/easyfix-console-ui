@@ -77,6 +77,30 @@ describe("date pickers", () => {
     );
   });
 
+  it("supports month selection and commits the first day immediately", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    renderWithProvider(
+      <DatePicker
+        defaultValue={new Date("2026-07-10T07:00:00.000Z")}
+        onChange={onChange}
+        showTimeZone={false}
+        timeZone={timeZone}
+        type="month"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "选择月份" }));
+    await user.click(screen.getByRole("gridcell", { name: "8月" }));
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0].toISOString()).toBe(
+      "2026-08-01T07:00:00.000Z",
+    );
+    expect(screen.queryByRole("button", { name: "确定" })).not.toBeInTheDocument();
+  });
+
   it("only commits DateTimePicker selection after confirming", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
@@ -104,7 +128,35 @@ describe("date pickers", () => {
     );
   });
 
-  it("allows a same-day DateRangePicker range", async () => {
+  it("applies defaultTime and selectableRange to a new datetime", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    renderWithProvider(
+      <DateTimePicker
+        defaultTime="00:00:00"
+        defaultValue={new Date("2026-07-10T07:00:00.000Z")}
+        onChange={onChange}
+        selectableRange="09:30:00 - 10:00:00"
+        showTimeZone={false}
+        timeZone={timeZone}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "选择日期和时间" }));
+    await user.click(getFirstInsideDayButton());
+
+    expect(screen.getByRole("combobox", { name: "小时" })).toHaveTextContent(
+      "09",
+    );
+    expect(screen.getByRole("combobox", { name: "分钟" })).toHaveTextContent(
+      "30",
+    );
+    await user.click(screen.getByRole("button", { name: "确定" }));
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows selecting the same day as both range endpoints", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
 
@@ -119,11 +171,15 @@ describe("date pickers", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "选择日期范围" }));
-    await user.click(getFirstInsideDayButton());
+    const dayButton = getFirstInsideDayButton();
+    await user.click(dayButton);
 
     const confirmButton = screen.getByRole("button", { name: "确定" });
-    expect(confirmButton).not.toBeDisabled();
+    expect(confirmButton).toBeDisabled();
     expect(onChange).not.toHaveBeenCalled();
+
+    await user.click(dayButton);
+    expect(confirmButton).not.toBeDisabled();
 
     await user.click(confirmButton);
     expect(onChange).toHaveBeenCalledTimes(1);
@@ -131,5 +187,66 @@ describe("date pickers", () => {
     expect(range.from).toBeInstanceOf(Date);
     expect(range.to).toBeInstanceOf(Date);
     expect(range.to.getTime() - range.from.getTime()).toBe(86_399_999);
+  });
+
+  it("applies both endpoint times to a same-day datetime range", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    renderWithProvider(
+      <DateRangePicker
+        defaultTime={["09:00:00", "18:00:00"]}
+        numberOfMonths={1}
+        onChange={onChange}
+        shortcuts={false}
+        showTime
+        showTimeZone={false}
+        timeZone={timeZone}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "选择日期时间范围" }),
+    );
+    const dayButton = getFirstInsideDayButton();
+    await user.click(dayButton);
+    expect(screen.getByRole("button", { name: "确定" })).toBeDisabled();
+
+    await user.click(dayButton);
+    const confirmButton = screen.getByRole("button", { name: "确定" });
+    expect(confirmButton).not.toBeDisabled();
+    await user.click(confirmButton);
+
+    const range = onChange.mock.calls[0][0];
+    expect(range.to.getTime() - range.from.getTime()).toBe(9 * 60 * 60 * 1000);
+  });
+
+  it("prevents an inverted same-day datetime range", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    renderWithProvider(
+      <DateRangePicker
+        onChange={onChange}
+        shortcuts={false}
+        showTime
+        showTimeZone={false}
+        timeZone={timeZone}
+        numberOfMonths={1}
+        value={{
+          from: new Date("2026-07-01T09:00:00-04:00"),
+          to: new Date("2026-07-01T08:00:00-04:00"),
+        }}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /2026-07-01.*至.*2026-07-01/,
+      }),
+    );
+
+    expect(screen.getByRole("button", { name: "确定" })).toBeDisabled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
