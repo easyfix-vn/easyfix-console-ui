@@ -14,7 +14,7 @@ export interface CountryCodeOption {
 }
 
 export const DEFAULT_CC_OPTIONS: CountryCodeOption[] = [
-  { cc: "84", label: "+84", flag: "vn", phoneLength: 10 },
+  { cc: "84", label: "+84", flag: "vn", phoneLength: 9 },
   { cc: "86", label: "+86", flag: "cn", phoneLength: 11 },
 ];
 
