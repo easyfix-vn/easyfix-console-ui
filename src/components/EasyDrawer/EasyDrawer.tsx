@@ -81,7 +81,7 @@ export function EasyDrawerBackdrop({
   return (
     <DrawerPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 h-dvh w-screen bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-50 h-dvh w-screen bg-black/40 backdrop-blur-[2px] transition-opacity duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] data-ending-style:opacity-0 data-starting-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-swiping:duration-0",
         className,
       )}
       data-slot="easy-drawer-backdrop"
@@ -101,7 +101,8 @@ export function EasyDrawerViewport({
     <DrawerPrimitive.Viewport
       className={cn(
         "fixed inset-0 z-50 h-dvh w-screen",
-        (position === "right" || position === "left") && "flex items-stretch",
+        (position === "right" || position === "left") &&
+          "flex items-stretch p-3 sm:p-4",
         position === "right" && "justify-end",
         position === "left" && "justify-start",
         position === "bottom" && "flex flex-col justify-end",
@@ -133,20 +134,20 @@ export function EasyDrawerPopup({
       <EasyDrawerViewport position={position}>
         <DrawerPrimitive.Popup
           className={cn(
-            "relative flex max-h-full min-h-0 flex-col overflow-hidden bg-background text-foreground shadow-xl outline-none transition-[transform,opacity] duration-300 ease-out will-change-[transform,opacity] data-ending-style:opacity-0 data-starting-style:opacity-0",
+            "relative flex max-h-full min-h-0 flex-col overflow-hidden bg-background text-foreground shadow-xl outline-none transition-[transform,opacity] duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[transform,opacity] data-ending-style:opacity-0 data-starting-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]",
             (position === "right" || position === "left") &&
               cn(
-                "h-full w-[calc(100vw-3rem)]",
+                "h-full w-full rounded-2xl",
                 widthClass,
               ),
             position === "right" &&
-              "border-s border-border data-ending-style:translate-x-full data-starting-style:translate-x-full",
+              "transform-[translateX(var(--drawer-swipe-movement-x))] border-s border-border data-ending-style:transform-[translateX(100%)] data-starting-style:transform-[translateX(100%)]",
             position === "left" &&
-              "border-e border-border data-ending-style:-translate-x-full data-starting-style:-translate-x-full",
+              "transform-[translateX(var(--drawer-swipe-movement-x))] border-e border-border data-ending-style:transform-[translateX(-100%)] data-starting-style:transform-[translateX(-100%)]",
             position === "bottom" &&
-              "max-h-[85dvh] w-full rounded-t-xl border-t border-border data-ending-style:translate-y-full data-starting-style:translate-y-full",
+              "transform-[translateY(var(--drawer-swipe-movement-y))] max-h-[85dvh] w-full rounded-t-xl border-t border-border data-ending-style:transform-[translateY(100%)] data-starting-style:transform-[translateY(100%)]",
             position === "top" &&
-              "max-h-[85dvh] w-full rounded-b-xl border-b border-border data-ending-style:-translate-y-full data-starting-style:-translate-y-full",
+              "transform-[translateY(var(--drawer-swipe-movement-y))] max-h-[85dvh] w-full rounded-b-xl border-b border-border data-ending-style:transform-[translateY(-100%)] data-starting-style:transform-[translateY(-100%)]",
             className,
           )}
           data-slot="easy-drawer-popup"
