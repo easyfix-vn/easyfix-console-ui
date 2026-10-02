@@ -391,7 +391,7 @@ export function EasyI18nInput<Locale extends string = EasyI18nLocale>({
           >
             <TabsPrimitive.Tab
               value={primaryTabValue}
-              className="relative flex h-6 min-w-0 max-w-24 shrink-0 cursor-pointer items-center justify-center rounded border border-transparent px-1.5 text-[11px] font-medium leading-4 text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-active:bg-background data-active:text-foreground data-active:shadow-sm"
+              className="relative flex h-6 min-w-0 max-w-24 shrink-0 cursor-pointer items-center justify-center rounded border border-transparent px-1.5 text-xs font-medium leading-4 text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-active:bg-background data-active:text-foreground data-active:shadow-sm"
               data-slot="easy-i18n-primary-tab"
               title={t("i18nInput.defaultLocale")}
             >
@@ -416,7 +416,7 @@ export function EasyI18nInput<Locale extends string = EasyI18nLocale>({
                 >
                   <TabsPrimitive.Tab
                     value={locale}
-                    className="relative flex h-6 min-w-0 max-w-24 shrink-0 cursor-pointer items-center justify-center rounded-s border border-transparent px-1.5 pe-0.5 text-[11px] font-medium leading-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="relative flex h-6 min-w-0 max-w-24 shrink-0 cursor-pointer items-center justify-center rounded-s border border-transparent px-1.5 pe-0.5 text-xs font-medium leading-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     data-slot="easy-i18n-locale-tab"
                     title={getLocaleName(locale)}
                   >

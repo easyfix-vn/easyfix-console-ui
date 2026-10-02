@@ -100,6 +100,7 @@ export function TableHead({
         className,
       )}
       data-slot="table-head"
+      scope="col"
       {...props}
     />
   );

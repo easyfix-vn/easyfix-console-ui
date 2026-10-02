@@ -10,6 +10,7 @@ import { ChevronRightIcon, XIcon } from "lucide-react";
 import * as React from "react";
 import { createContext, useContext } from "react";
 import { useEasyT } from "@/i18n";
+import { canStartDrawerSwipe } from "@/lib/drawer-swipe";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -219,6 +220,8 @@ export function DrawerViewport({
 export function DrawerContent({
   className,
   children,
+  onPointerDown,
+  onTouchStart,
   showCloseButton = false,
   showSwipeHandle: showSwipeHandleProp,
   position: positionProp,
@@ -298,6 +301,14 @@ export function DrawerContent({
           )}
           data-slot="drawer-popup"
           {...props}
+          onPointerDown={(event) => {
+            onPointerDown?.(event);
+            if (!canStartDrawerSwipe(event.target)) event.stopPropagation();
+          }}
+          onTouchStart={(event) => {
+            onTouchStart?.(event);
+            if (!canStartDrawerSwipe(event.target)) event.stopPropagation();
+          }}
         >
           {children}
           {effectiveShowCloseButton && (
@@ -333,6 +344,7 @@ export function DrawerHeader({
       className,
     ),
     "data-slot": "drawer-header",
+    "data-drawer-swipe-handle": allowSelection ? undefined : "",
   };
 
   return useRender({
@@ -364,6 +376,7 @@ export function DrawerFooter({
       className,
     ),
     "data-slot": "drawer-footer",
+    "data-base-ui-swipe-ignore": "",
   };
 
   return useRender({
@@ -424,6 +437,7 @@ export function DrawerPanel({
       className,
     ),
     "data-slot": "drawer-panel",
+    "data-base-ui-swipe-ignore": "",
   };
 
   const content = useRender({
@@ -436,6 +450,7 @@ export function DrawerPanel({
     return (
       <ScrollArea
         className="min-h-0 w-full flex-1 touch-auto"
+        data-base-ui-swipe-ignore=""
         scrollFade={scrollFade}
       >
         {content}
@@ -471,6 +486,7 @@ export function DrawerBar({
       className,
     ),
     "data-slot": "drawer-bar",
+    "data-drawer-swipe-handle": "",
   };
 
   return useRender({

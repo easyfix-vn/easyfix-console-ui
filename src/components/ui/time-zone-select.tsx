@@ -40,7 +40,7 @@ export function TimeZoneTag({
   return (
     <span
       className={cn(
-        "ms-auto inline-flex h-5 shrink-0 items-center rounded-full bg-muted px-2 font-mono text-[11px] font-medium leading-none text-muted-foreground",
+        "ms-auto inline-flex h-5 shrink-0 items-center rounded-full bg-muted px-2 font-mono text-xs font-medium leading-4 text-muted-foreground",
         className,
       )}
       data-slot="time-zone-tag"
@@ -192,7 +192,7 @@ export function TimezoneSelect({
                 {optionName}
               </span>
               {isBrowserTimeZone && (
-                <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                   {currentTimeZoneLabel}
                 </span>
               )}

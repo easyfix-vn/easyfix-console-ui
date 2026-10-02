@@ -3,6 +3,7 @@
 import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer";
 import { XIcon } from "lucide-react";
 import * as React from "react";
+import { canStartDrawerSwipe } from "@/lib/drawer-swipe";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -121,6 +122,8 @@ export function EasyDrawerPopup({
   width = "md",
   showCloseButton = true,
   children,
+  onPointerDown,
+  onTouchStart,
   ...props
 }: DrawerPrimitive.Popup.Props & {
   position?: EasyDrawerPosition;
@@ -152,6 +155,14 @@ export function EasyDrawerPopup({
           )}
           data-slot="easy-drawer-popup"
           {...props}
+          onPointerDown={(event) => {
+            onPointerDown?.(event);
+            if (!canStartDrawerSwipe(event.target)) event.stopPropagation();
+          }}
+          onTouchStart={(event) => {
+            onTouchStart?.(event);
+            if (!canStartDrawerSwipe(event.target)) event.stopPropagation();
+          }}
         >
           {showCloseButton && (
             <EasyDrawerClose
@@ -179,6 +190,7 @@ export function EasyDrawerHeader({
         className,
       )}
       data-slot="easy-drawer-header"
+      data-drawer-swipe-handle=""
       {...props}
     />
   );
@@ -193,13 +205,14 @@ export function EasyDrawerBody({
   scrollFade?: boolean;
 }): React.ReactElement {
   return (
-    <ScrollArea className="min-h-0 flex-1" scrollFade={scrollFade}>
+    <ScrollArea className="min-h-0 flex-1 touch-auto" data-base-ui-swipe-ignore="" scrollFade={scrollFade}>
       <div
         className={cn(
           "px-6 pt-5 pb-8 text-sm",
           className,
         )}
         data-slot="easy-drawer-body"
+        data-base-ui-swipe-ignore=""
         {...props}
       >
         {children}
@@ -219,6 +232,7 @@ export function EasyDrawerFooter({
         className,
       )}
       data-slot="easy-drawer-footer"
+      data-base-ui-swipe-ignore=""
       {...props}
     />
   );
@@ -274,7 +288,7 @@ export function EasyDrawer({
         {(title || description) && (
           <EasyDrawerHeader>
             {title && (
-              <EasyDrawerTitle className="text-lg font-semibold leading-none tracking-tight text-foreground">
+              <EasyDrawerTitle className="text-lg font-semibold leading-6 tracking-tight text-foreground">
                 {title}
               </EasyDrawerTitle>
             )}

@@ -200,7 +200,7 @@ export function EasyMultiSelect({
                     {emptyText ?? t("multiSelect.empty")}
                   </div>
                 )}
-                {filteredOptions.map((option, index) => {
+                {filteredOptions.map((option) => {
                   const selected = selectedSet.has(option.value);
                   const active = enabledOptions[activeIndex]?.value === option.value;
                   return (

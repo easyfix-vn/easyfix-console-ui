@@ -172,7 +172,7 @@ function UploadSizeMeta({
   sizeAriaLabel,
 }: UploadSizeMetaProps) {
   return (
-    <span className="flex w-full items-center justify-center px-3 text-center text-[10px] leading-3 text-muted-foreground">
+    <span className="flex w-full items-center justify-center px-3 text-center text-xs leading-4 text-muted-foreground">
       <span className="flex max-w-full items-center justify-center gap-1" aria-label={sizeAriaLabel}>
         <Scaling className="size-3 shrink-0" aria-hidden="true" />
         <span className="min-w-0 break-words">{sizeLabel}</span>

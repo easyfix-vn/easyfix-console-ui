@@ -131,7 +131,7 @@ export function EasyDialogTitle({
   return (
     <DialogPrimitive.Title
       className={cn(
-        "font-heading text-lg font-semibold leading-none tracking-tight text-foreground",
+        "font-heading text-lg font-semibold leading-6 tracking-tight text-foreground",
         className,
       )}
       data-slot="easy-dialog-title"

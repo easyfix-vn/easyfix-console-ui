@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
+import { useEasyT } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 export type EasyTreeNode = {
@@ -68,6 +69,7 @@ export function EasyTreeSelectPanel({
   centerActions = false,
   renderItem,
 }: EasyTreeSelectPanelProps): React.ReactElement {
+  const t = useEasyT();
   const initialExpanded = useMemo(() => collectInitialExpanded(treeData), [treeData]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(initialExpanded);
   const [sideCollapsed, setSideCollapsed] = useState(defaultCollapsed);
@@ -101,30 +103,23 @@ export function EasyTreeSelectPanel({
         <div
           className={cn(
             "flex min-h-8 items-center gap-1 rounded-md px-2 text-sm transition-colors",
-            node.disabled
-              ? "cursor-not-allowed opacity-50"
-              : "cursor-pointer hover:bg-accent",
+            node.disabled ? "opacity-50" : "hover:bg-accent",
             isSelected && "bg-primary/10 text-primary",
             node.className,
           )}
           data-selected={isSelected || undefined}
           data-slot="easy-tree-item"
-          onClick={() => {
-            if (!node.disabled) onSelect?.(node);
-          }}
           style={{ paddingLeft: `calc(0.5rem + ${depth} * 1rem)` }}
         >
           <button
-            aria-label={expanded ? "Collapse" : "Expand"}
-            className={cn(
-              "grid size-5 shrink-0 place-items-center rounded text-muted-foreground",
-              !hasChildren && "invisible",
-            )}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (hasChildren) toggleNode(node.id);
-            }}
+            aria-label={`${t(expanded ? "actions.collapse" : "actions.expand")} ${typeof node.label === "string" || typeof node.label === "number" ? node.label : ""}`.trim()}
+            aria-expanded={hasChildren ? expanded : undefined}
+            className="grid size-5 shrink-0 place-items-center rounded text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring pointer-coarse:size-11"
+            disabled={node.disabled}
+            onClick={() => toggleNode(node.id)}
+            tabIndex={hasChildren ? undefined : -1}
             type="button"
+            style={hasChildren ? undefined : { visibility: "hidden" }}
           >
             {expanded ? (
               <ChevronDown className="size-4" />
@@ -132,9 +127,15 @@ export function EasyTreeSelectPanel({
               <ChevronRight className="size-4" />
             )}
           </button>
-          <div className="min-w-0 flex-1">
+          <button
+            aria-pressed={isSelected}
+            className="min-h-8 min-w-0 flex-1 rounded text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed pointer-coarse:min-h-11"
+            disabled={node.disabled}
+            onClick={() => onSelect?.(node)}
+            type="button"
+          >
             {renderItem ? renderItem(node, state) : node.label}
-          </div>
+          </button>
         </div>
         {hasChildren && expanded && (
           <ul className="space-y-1">
@@ -167,8 +168,8 @@ export function EasyTreeSelectPanel({
                 <div className="min-w-0 flex-1">{searchActions}</div>
                 {collapsible && (
                   <button
-                    aria-label="Collapse panel"
-                    className="grid size-7 shrink-0 place-items-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-foreground"
+                    aria-label={t("actions.collapse")}
+                    className="grid size-7 shrink-0 place-items-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring pointer-coarse:size-11"
                     onClick={() => setSideCollapsed(true)}
                     type="button"
                   >
@@ -181,8 +182,8 @@ export function EasyTreeSelectPanel({
           {!searchActions && collapsible && (
             <div className="flex justify-end border-b border-border p-2">
               <button
-                aria-label="Collapse panel"
-                className="grid size-7 shrink-0 place-items-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-foreground"
+                aria-label={t("actions.collapse")}
+                className="grid size-7 shrink-0 place-items-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring pointer-coarse:size-11"
                 onClick={() => setSideCollapsed(true)}
                 type="button"
               >
@@ -210,8 +211,8 @@ export function EasyTreeSelectPanel({
       >
         {collapsible && sideCollapsed && (
           <button
-            aria-label="Expand panel"
-            className="absolute left-3 top-3 grid size-7 shrink-0 place-items-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label={t("actions.expand")}
+            className="absolute left-3 top-3 grid size-7 shrink-0 place-items-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring pointer-coarse:size-11"
             onClick={() => setSideCollapsed(false)}
             type="button"
           >

@@ -568,7 +568,7 @@ export function DateRangePicker({
               calendarClassNames={{
                 month: "min-w-0",
                 months: "flex-col gap-4 sm:flex-row",
-                weekday: "text-[11px]",
+                weekday: "text-xs",
               }}
               calendarStyle={
                 { "--cell-size": "1.875rem" } as React.CSSProperties
