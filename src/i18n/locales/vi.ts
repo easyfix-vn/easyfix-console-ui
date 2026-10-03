@@ -1,4 +1,11 @@
 export const vi = {
+  pageLayout: {
+    closePanel: "Đóng {{name}}",
+    apps: "Điều hướng ứng dụng",
+    navigation: "Điều hướng trang",
+    context: "Thông tin bổ sung",
+    content: "Nội dung trang",
+  },
   actions: {
     add: "Thêm",
     cancel: "Hủy",
@@ -22,6 +29,10 @@ export const vi = {
     emptyDescription: "Không có dữ liệu phù hợp với điều kiện tìm kiếm hiện tại.",
     pageInfo: "Trang {{page}} / {{totalPages}}",
     pageSize: "{{size}} / trang",
+    pageSizeLabel: "Số dòng mỗi trang",
+    jumpToPage: "Chuyển đến trang",
+    previousPage: "Trang trước",
+    nextPage: "Trang sau",
     jumpTo: "Đến trang",
     page: "",
     total: "Tổng {{total}}",

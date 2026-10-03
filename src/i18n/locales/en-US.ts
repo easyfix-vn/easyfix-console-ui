@@ -1,4 +1,11 @@
 export const enUS = {
+  pageLayout: {
+    closePanel: "Close {{name}}",
+    apps: "App navigation",
+    navigation: "Page navigation",
+    context: "Context panel",
+    content: "Page content",
+  },
   actions: {
     add: "Add",
     cancel: "Cancel",
@@ -22,6 +29,10 @@ export const enUS = {
     emptyDescription: "No data matches the current search criteria.",
     pageInfo: "Page {{page}} / {{totalPages}}",
     pageSize: "{{size}} / page",
+    pageSizeLabel: "Rows per page",
+    jumpToPage: "Go to page",
+    previousPage: "Previous page",
+    nextPage: "Next page",
     jumpTo: "Go to",
     page: "",
     total: "Total {{total}}",

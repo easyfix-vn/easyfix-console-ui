@@ -3,7 +3,6 @@ import type { ReactNode } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Download, Ghost, LayoutGrid, List, Table2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEasyT } from '@/i18n'
-import { useMediaQuery } from '@/hooks/use-media-query'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -41,10 +40,9 @@ import {
 } from '@/components/ui/empty'
 import {
   EasySearchForm,
-  EasySearchFormActions,
   EASY_SEARCH_FORM_DEFAULT_COLLAPSE_THRESHOLD,
   getSearchFieldDefaultValues,
-} from './EasySearchForm'
+} from '../EasySearchForm'
 import { EasyColumnConfig } from './EasyColumnConfig'
 import type { ColumnDef, SearchFieldDef, SearchMode, SearchParams, SearchTableView, SortState } from './types'
 
@@ -198,7 +196,6 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   const [searchValues, setSearchValues] = useState<Record<string, unknown>>(
     () => getSearchFieldDefaultValues(searchFields),
   )
-  const [searchCollapsed, setSearchCollapsed] = useState(true)
   const [exportOpen, setExportOpen] = useState(false)
   const [sortState, setSortState] = useState<SortState | null>(defaultSort ?? null)
   const [jumpPage, setJumpPage] = useState('')
@@ -209,14 +206,6 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   const pendingSearchValuesRef = useRef<Record<string, unknown> | null>(null)
   const searchThrottleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSearchRunAtRef = useRef(0)
-  const matchesThreeSearchColumns = useMediaQuery('(min-width: 1280px)')
-  const matchesTwoSearchColumns = useMediaQuery('(min-width: 768px)')
-  const searchColumnCount = matchesThreeSearchColumns
-    ? 3
-    : matchesTwoSearchColumns
-      ? 2
-      : 1
-
   useEffect(() => {
     const availableKeys = getColumnOrder(columns)
     const defaultVisibleKeys = getDefaultVisibleKeys(columns)
@@ -333,33 +322,28 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     scheduleSearch(values)
   }
 
-  function handleReset() {
-    setSearchValues(defaultSearchValues)
-    scheduleSearch(defaultSearchValues)
+  function handleReset(values = defaultSearchValues) {
+    setSearchValues(values)
+    scheduleSearch(values)
   }
 
   function handlePageChange(newPage: number) {
     if (newPage < 1 || newPage > totalPages) return
-    onSearch({ page: newPage, pageSize: internalPageSize })
+    onSearch({ ...lastSubmittedSearchValuesRef.current, page: newPage, pageSize: internalPageSize })
   }
 
   function handlePageSizeChange(newSize: number) {
+    // A throttled search was already requested. Carry it into the new page
+    // size, while leaving any newer, unsubmitted manual edits as drafts.
+    const submittedValues = pendingSearchValuesRef.current ?? lastSubmittedSearchValuesRef.current
     if (searchThrottleTimerRef.current) {
       clearTimeout(searchThrottleTimerRef.current)
       searchThrottleTimerRef.current = null
     }
     pendingSearchValuesRef.current = null
-    lastSubmittedSearchValuesRef.current = { ...searchValues }
+    lastSubmittedSearchValuesRef.current = { ...submittedValues }
     setInternalPageSize(newSize)
-    onSearch({ page: 1, pageSize: newSize, ...searchValues })
-  }
-
-  function handleToolbarSearch() {
-    handleSearch(searchValues)
-  }
-
-  function handleToggleSearchCollapsed() {
-    setSearchCollapsed((value) => !value)
+    onSearch({ ...submittedValues, page: 1, pageSize: newSize })
   }
 
   function handleJumpPage() {
@@ -430,19 +414,6 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     close: () => setExportOpen(false),
     exportCurrentData,
   }
-
-  const normalizedSearchCollapseThreshold = Math.max(1, searchCollapseThreshold)
-  const canCollapseSearch =
-    searchFields.length > normalizedSearchCollapseThreshold
-  const visibleSearchFieldCount =
-    searchCollapsed && canCollapseSearch
-      ? normalizedSearchCollapseThreshold
-      : searchFields.length
-  const searchActionsInToolbar =
-    visibleSearchFieldCount > 0 &&
-    visibleSearchFieldCount % searchColumnCount === 0
-  const inlineSearchActionsInLastColumn =
-    (visibleSearchFieldCount + 1) % searchColumnCount === 0
 
   function renderExportButton() {
     const button = (
@@ -596,7 +567,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
     return (
       <div className="min-w-0" data-slot="easy-search-table-empty">
         {renderEmptyContent ? (
-          renderEmptyContent({ view, searchValues, reset: handleReset })
+          renderEmptyContent({ view, searchValues, reset: () => handleReset() })
         ) : (
           <Empty className="min-h-48 py-10 md:py-12">
             <EmptyHeader>
@@ -711,75 +682,60 @@ export function EasySearchTable<T extends Record<string, unknown>>({
   }
 
   return (
-    <div className="min-w-0 space-y-4">
-      {searchFields.length > 0 ? (
-        <EasySearchForm
-          fields={searchFields}
-          searchMode={searchMode}
-          values={searchValues}
-          onSearch={handleSearch}
-          onReset={handleReset}
-          onValuesChange={setSearchValues}
-          collapsed={searchCollapsed}
-          onToggle={handleToggleSearchCollapsed}
-          collapseThreshold={normalizedSearchCollapseThreshold}
-          showActions={!searchActionsInToolbar}
-          actionsClassName={
-            inlineSearchActionsInLastColumn ? undefined : 'justify-start'
-          }
-        />
-      ) : null}
+    <div className="min-w-0 space-y-4" data-slot="easy-search-table">
+      <EasySearchForm
+        fields={searchFields}
+        searchMode={searchMode}
+        values={searchValues}
+        onSearch={handleSearch}
+        onReset={handleReset}
+        onValuesChange={setSearchValues}
+        collapseThreshold={searchCollapseThreshold}
+        renderFooter={({ actions }) => (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {toolbarActions}
+              {actions}
+            </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          {toolbarActions}
-          {searchActionsInToolbar && (
-            <EasySearchFormActions
-              onSearch={handleToolbarSearch}
-              onReset={handleReset}
-              canCollapse={canCollapseSearch}
-              collapsed={searchCollapsed}
-              onToggle={handleToggleSearchCollapsed}
-            />
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {availableViews.length > 1 && (
-            <SegmentedControl
-              value={view}
-              onValueChange={(v) => setView(v as SearchTableView)}
-            >
-              <SegmentedControlList className="h-8">
-                {availableViews.map((item) => {
-                  const Icon = viewIcons[item]
-                  return (
-                    <Tooltip key={item}>
-                      <TooltipTrigger render={<span className="inline-flex" />}>
-                        <SegmentedControlItem value={item}>
-                          <Icon className="size-3.5" />
-                        </SegmentedControlItem>
-                      </TooltipTrigger>
-                      <TooltipPopup>{t(`searchTable.views.${item}`)}</TooltipPopup>
-                    </Tooltip>
-                  )
-                })}
-              </SegmentedControlList>
-            </SegmentedControl>
-          )}
-          {showExport && renderExportButton()}
-          <EasyColumnConfig
-            columns={orderedColumns}
-            visibleKeys={visibleKeys}
-            onChange={setVisibleKeys}
-            onOrderChange={setColumnOrder}
-            onReset={() => {
-              setColumnOrder(getColumnOrder(columns))
-              setVisibleKeys(getDefaultVisibleKeys(columns))
-            }}
-          />
-        </div>
-      </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {availableViews.length > 1 && (
+                <SegmentedControl
+                  value={view}
+                  onValueChange={(v) => setView(v as SearchTableView)}
+                >
+                  <SegmentedControlList className="h-8">
+                    {availableViews.map((item) => {
+                      const Icon = viewIcons[item]
+                      return (
+                        <Tooltip key={item}>
+                          <TooltipTrigger render={<span className="inline-flex" />}>
+                            <SegmentedControlItem value={item}>
+                              <Icon className="size-3.5" />
+                            </SegmentedControlItem>
+                          </TooltipTrigger>
+                          <TooltipPopup>{t(`searchTable.views.${item}`)}</TooltipPopup>
+                        </Tooltip>
+                      )
+                    })}
+                  </SegmentedControlList>
+                </SegmentedControl>
+              )}
+              {showExport && renderExportButton()}
+              <EasyColumnConfig
+                columns={orderedColumns}
+                visibleKeys={visibleKeys}
+                onChange={setVisibleKeys}
+                onOrderChange={setColumnOrder}
+                onReset={() => {
+                  setColumnOrder(getColumnOrder(columns))
+                  setVisibleKeys(getDefaultVisibleKeys(columns))
+                }}
+              />
+            </div>
+          </div>
+        )}
+      />
 
       <div className="relative">
         {renderContent()}
@@ -796,7 +752,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
               onValueChange={(v) => v != null && handlePageSizeChange(v)}
               items={Object.fromEntries(pageSizeOptions.map((n) => [n, t('searchTable.pageSize', { size: n })]))}
             >
-              <SelectTrigger size="sm" className="h-7 w-28">
+              <SelectTrigger size="sm" className="h-7 w-28" aria-label={t('searchTable.pageSizeLabel')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectPopup>
@@ -818,6 +774,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
               <span className="text-[var(--muted-foreground)]">{t('searchTable.jumpTo')}</span>
               <input
                 type="number"
+                aria-label={t('searchTable.jumpToPage')}
                 min={1}
                 max={totalPages}
                 value={jumpPage}
@@ -832,6 +789,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
           <Button
             variant="outline"
             size="icon"
+            aria-label={t('searchTable.previousPage')}
             disabled={page <= 1}
             onClick={() => handlePageChange(page - 1)}
           >
@@ -840,6 +798,7 @@ export function EasySearchTable<T extends Record<string, unknown>>({
           <Button
             variant="outline"
             size="icon"
+            aria-label={t('searchTable.nextPage')}
             disabled={page >= totalPages}
             onClick={() => handlePageChange(page + 1)}
           >

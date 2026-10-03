@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   EasySearchTable,
   type ColumnDef,
@@ -10,6 +10,14 @@ import {
   type SearchFieldDef,
 } from "./EasySearchTable";
 import { EasyI18nProvider } from "@/i18n";
+
+let containerWidth = 390;
+let resizeFormContainers: Array<(width: number) => void> = [];
+
+function setContainerWidth(width: number) {
+  containerWidth = width;
+  act(() => resizeFormContainers.forEach((resize) => resize(width)));
+}
 
 function setViewportWidth(width: number) {
   Object.defineProperty(window, "matchMedia", {
@@ -76,7 +84,25 @@ describe("EasySearchTable", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setViewportWidth(390);
+    containerWidth = 390;
+    resizeFormContainers = [];
+    vi.stubGlobal("ResizeObserver", class {
+      constructor(private callback: ResizeObserverCallback) {}
+      observe(target: Element) {
+        if (target.getAttribute("data-slot") !== "easy-search-form-root") return;
+        const resize = (width: number) => this.callback(
+          [{ target, contentRect: { width } } as ResizeObserverEntry],
+          this as unknown as ResizeObserver,
+        );
+        resizeFormContainers.push(resize);
+        resize(containerWidth);
+      }
+      unobserve() {}
+      disconnect() {}
+    });
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   it("renders table headers", () => {
     render(<EasySearchTable {...defaultProps} />);
@@ -343,6 +369,57 @@ describe("EasySearchTable", () => {
     );
   });
 
+  it("preserves submitted filters when paging without applying manual drafts", async () => {
+    const user = userEvent.setup();
+    const onSearch = vi.fn();
+    renderWithI18n(
+      <EasySearchTable
+        {...defaultProps}
+        total={30}
+        searchMode="manual"
+        searchThrottleMs={0}
+        onSearch={onSearch}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText("Search name");
+    await user.type(input, "Alice");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.clear(input);
+    await user.type(input, "Bob");
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+
+    expect(onSearch).toHaveBeenLastCalledWith({ name: "Alice", page: 2, pageSize: 10 });
+    expect(input).toHaveValue("Bob");
+  });
+
+  it("uses submitted filters for page-size changes and later submits the draft", async () => {
+    const user = userEvent.setup();
+    const onSearch = vi.fn();
+    renderWithI18n(
+      <EasySearchTable
+        {...defaultProps}
+        total={50}
+        searchMode="manual"
+        searchThrottleMs={0}
+        onSearch={onSearch}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText("Search name");
+    await user.type(input, "Alice");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.clear(input);
+    await user.type(input, "Bob");
+    await user.click(screen.getByRole("combobox", { name: "Rows per page" }));
+    await user.click(await screen.findByRole("option", { name: "20 / page" }));
+
+    expect(onSearch).toHaveBeenLastCalledWith({ name: "Alice", page: 1, pageSize: 20 });
+
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    expect(onSearch).toHaveBeenLastCalledWith({ name: "Bob", page: 1, pageSize: 20 });
+  });
+
   it("auto searches when custom fields change", async () => {
     const user = userEvent.setup();
     const onSearch = vi.fn();
@@ -450,7 +527,7 @@ describe("EasySearchTable", () => {
   });
 
   it("keeps actions in a third grid cell when fewer than three fields are visible", () => {
-    setViewportWidth(1280);
+    setContainerWidth(1024);
     const twoFields: SearchFieldDef[] = [
       ...searchFields,
       { key: "status", labelKey: "Status", type: "input" },
@@ -459,25 +536,25 @@ describe("EasySearchTable", () => {
     render(<EasySearchTable {...defaultProps} searchFields={twoFields} />);
 
     const actions = document.querySelector('[data-slot="easy-search-form-actions"]');
-    expect(actions?.parentElement).toHaveClass("grid", "xl:grid-cols-3");
+    expect(actions?.parentElement).toHaveAttribute("data-slot", "easy-search-form");
     expect(actions).toHaveClass("justify-end");
     expect(actions).not.toHaveClass("justify-start");
     expect(document.querySelectorAll('[data-slot="easy-search-form-actions"]')).toHaveLength(1);
   });
 
   it("left aligns inline actions when their cell is not the last column", () => {
-    setViewportWidth(1280);
+    setContainerWidth(1024);
 
     render(<EasySearchTable {...defaultProps} />);
 
     const actions = document.querySelector('[data-slot="easy-search-form-actions"]');
-    expect(actions?.parentElement).toHaveClass("grid", "xl:grid-cols-3");
+    expect(actions?.parentElement).toHaveAttribute("data-slot", "easy-search-form");
     expect(actions).toHaveClass("justify-start");
     expect(actions).not.toHaveClass("justify-end");
   });
 
   it("moves actions to the toolbar when fields fill the responsive row", () => {
-    setViewportWidth(800);
+    setContainerWidth(800);
     const twoFields: SearchFieldDef[] = [
       ...searchFields,
       { key: "status", labelKey: "Status", type: "input" },
@@ -499,7 +576,7 @@ describe("EasySearchTable", () => {
   });
 
   it("collapses after five fields by default and recalculates action placement", async () => {
-    setViewportWidth(1280);
+    setContainerWidth(1024);
     const user = userEvent.setup();
     const sixFields: SearchFieldDef[] = Array.from({ length: 6 }, (_, index) => ({
       key: `field${index + 1}`,
@@ -515,6 +592,54 @@ describe("EasySearchTable", () => {
     await user.click(screen.getByRole("button", { name: /expand/i }));
     expect(screen.getByText("Field 6")).toBeInTheDocument();
     expect(document.querySelectorAll('[data-slot="easy-search-form-actions"]')).toHaveLength(1);
+  });
+
+  it("updates action placement as its container resizes independently of the viewport", () => {
+    setViewportWidth(1440);
+    setContainerWidth(480);
+    render(
+      <EasySearchTable
+        {...defaultProps}
+        toolbarActions={<button type="button">Toolbar action</button>}
+      />,
+    );
+    const toolbar = screen.getByRole("button", { name: "Toolbar action" }).parentElement;
+    expect(toolbar?.querySelector('[data-slot="easy-search-form-actions"]')).toBeInTheDocument();
+
+    setContainerWidth(640);
+    let actions = document.querySelector('[data-slot="easy-search-form-actions"]');
+    expect(actions?.parentElement).toHaveAttribute("data-slot", "easy-search-form");
+    expect(actions).toHaveClass("justify-end");
+
+    setContainerWidth(1024);
+    actions = document.querySelector('[data-slot="easy-search-form-actions"]');
+    expect(actions?.parentElement).toHaveAttribute("data-slot", "easy-search-form");
+    expect(actions).toHaveClass("justify-start");
+
+    setContainerWidth(320);
+    expect(toolbar?.querySelector('[data-slot="easy-search-form-actions"]')).toBeInTheDocument();
+    expect(document.querySelectorAll('[data-slot="easy-search-form-actions"]')).toHaveLength(1);
+  });
+
+  it("accounts for spanning fields wrapping rows when placing actions", () => {
+    setContainerWidth(1024);
+    render(
+      <EasySearchTable
+        {...defaultProps}
+        searchFields={[
+          { key: "name", labelKey: "Name", type: "input", colSpan: 2 },
+          { key: "status", labelKey: "Status", type: "input", colSpan: 2 },
+        ]}
+      />,
+    );
+
+    const actions = document.querySelector('[data-slot="easy-search-form-actions"]');
+    expect(actions?.parentElement).toHaveAttribute("data-slot", "easy-search-form");
+    expect(actions).toHaveClass("justify-end");
+
+    setContainerWidth(640);
+    expect(document.querySelector('[data-slot="easy-search-form-actions"]')?.parentElement)
+      .not.toHaveAttribute("data-slot", "easy-search-form");
   });
 
   it("initializes custom search fields with a controlled null value", () => {

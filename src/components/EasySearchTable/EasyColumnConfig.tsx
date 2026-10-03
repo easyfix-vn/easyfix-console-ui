@@ -138,7 +138,7 @@ export function EasyColumnConfig<T>({
       <Popover>
         <TooltipTrigger render={<span className="inline-flex" />}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="icon" className="size-8">
+            <Button variant="outline" size="icon" className="size-8" aria-label={t('searchTable.columnConfig')}>
               <Settings2 className="size-4" />
             </Button>
           </PopoverTrigger>

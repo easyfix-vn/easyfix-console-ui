@@ -1,4 +1,11 @@
 export const zhCN = {
+  pageLayout: {
+    closePanel: "关闭{{name}}",
+    apps: "应用导航",
+    navigation: "页面导航",
+    context: "辅助信息",
+    content: "页面内容",
+  },
   actions: {
     add: "新增",
     cancel: "取消",
@@ -22,6 +29,10 @@ export const zhCN = {
     emptyDescription: "没有符合当前搜索条件的数据",
     pageInfo: "第 {{page}} / {{totalPages}} 页",
     pageSize: "{{size}} 条/页",
+    pageSizeLabel: "每页条数",
+    jumpToPage: "跳转页码",
+    previousPage: "上一页",
+    nextPage: "下一页",
     jumpTo: "跳至",
     page: "页",
     total: "共 {{total}} 条",
